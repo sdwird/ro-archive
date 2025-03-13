@@ -122,12 +122,6 @@ local Button = Tab:CreateButton({
    end,
 })
 ---
-local Button = Tab:CreateButton({
-   Name = "universal aimbot/esp",
-   Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/Exunys/AirHub-V2/main/src/Main.lua"))()
-   end,
-})
 
 
 
