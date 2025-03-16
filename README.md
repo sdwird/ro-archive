@@ -13,7 +13,6 @@ Ronix = i think its safe but the ui is shit and its kinda unstable
 --
 Krnl = safe (probably)
 --
-
-
-
+for safe exploits visit = https://wearedevs.net/exploits
+--
 latest update 16.03.2025
