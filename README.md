@@ -1,6 +1,6 @@
 # ro-archive
 
-## 📜 Overview
+## The Script
 
 ```
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
