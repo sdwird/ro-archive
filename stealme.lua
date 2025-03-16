@@ -158,7 +158,7 @@ local Section = Tab:CreateSection("hub scripts because why not")
 local Divider = Tab:CreateDivider()
 ---
 local Button = Tab:CreateButton({
-   Name = "Skibidi Solara Hub",
+   Name = "Skibidi Solara Hub (ORION LIBRARY)",
    Callback = function()
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua",true))()
    end,
@@ -167,6 +167,6 @@ local Button = Tab:CreateButton({
 local Button = Tab:CreateButton({
    Name = "Skibidi Solara Hub (AUTO DETECTS GAMES)",
    Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua",true))()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield",true))()
    end,
 })
