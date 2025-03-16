@@ -20,4 +20,4 @@ Krnl – ✅ Safe (likely).
 for good and safe exploits, visit: https://wearedevs.net/exploits
 
 
-Version: 16.03.2025
+Latest Update : 16.03.2025
