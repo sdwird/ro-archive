@@ -86,6 +86,13 @@ local Button = Tab:CreateButton({
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"))()
    end,
 })
+--
+local Button = Tab:CreateButton({
+   Name = "blue lock rivals (the best script gng)",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/bluelock-rivals.lua"))()
+   end,
+})
 
 
 
