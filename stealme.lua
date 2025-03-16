@@ -163,3 +163,10 @@ local Button = Tab:CreateButton({
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua",true))()
    end,
 })
+--
+local Button = Tab:CreateButton({
+   Name = "Skibidi Solara Hub (AUTO DETECTS GAMES)",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua",true))()
+   end,
+})
