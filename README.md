@@ -1,18 +1,23 @@
 # ro-archive
 
-```
+## 📜 Overview
+
+To use this script, execute the following code in your Roblox environment:
+
+```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
-```
-if you want to use this shi atleast use some god damn safe executors
 
-Xeno = Safe
---
-Solara = Slightly Rat (even windows defender detects it bro)
---
-Ronix = i think its safe but the ui is shit and its kinda unstable
---
-Krnl = safe (probably)
---
-for safe exploits visit = https://wearedevs.net/exploits
+⚠️ Important: Use Safe Executors
 
-latest update 16.03.2025
+If you're using this script, please make sure you're using a safe executor. Here's a quick guide on some popular ones:
+🔒 Executor Safety Ratings:
+
+    Xeno – ✅ Safe and reliable.
+    Solara – ⚠️ Slightly risky (Windows Defender may flag it as suspicious).
+    Ronix – ⚖️ Likely safe, but the UI is not user-friendly, and it can be unstable.
+    Krnl – ✅ Safe (likely).
+
+For more safe exploits, visit: WeAreDevs Exploits.
+🆕 Latest Update
+
+Version: 16.03.2025
