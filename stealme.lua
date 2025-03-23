@@ -170,3 +170,10 @@ local Button = Tab:CreateButton({
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield",true))()
    end,
 })
+--
+local Button = Tab:CreateButton({
+   Name = "Skibidi Solara Hub (not archived can change)",
+   Callback = function()
+       loadstring(game:HttpGet("https://gitlab.com/skibidi7575006/skibidiidi/-/raw/main/SKIBIDIIHUBB"))()
+   end,
+})
