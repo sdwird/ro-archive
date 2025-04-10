@@ -24,7 +24,7 @@ Aim (PAID) - ✅ SAFEST AMONG ALL OF THEM
 Wave (PAID) - ⚖️ Safe Probably?
 --
 
-for good and safe exploits, visit: https://wearedevs.net/exploits
+for good and safe exploits, visit: https://wearedevs.net/exploits (probably safe)
 
 
 Latest Update : 16.03.2025
