@@ -1,0 +1,112 @@
+-- this veriosn is just better then rayfield
+-- Load WindUI
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+
+-- Create Window
+local Window = WindUI:CreateWindow({
+    Title = "Archive Hub",
+    Icon = "archive",
+    Author = "sdwird",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    UserEnabled = true,
+    SideBarWidth = 200,
+    HasOutline = true,
+})
+
+Window:SetToggleKey(Enum.KeyCode.H)
+
+-- Homepage Tab
+local HomeTab = Window:Tab({
+    Title = "Homepage",
+    Icon = "home"
+})
+HomeTab:Paragraph({
+    Title = "READ THIS BEFORE CLICKING ANYTHING",
+    Desc = "❗ On some scripts, the Archive GUI will close and the script will be injected.\nKeys get auto-copied. Press paste (CTRL + V on PC)."
+})
+HomeTab:Button({
+    Title = "Destroy GUI",
+    Icon = "x",
+    Callback = function()
+        Window:Destroy()
+    end
+})
+
+-- Scripts Tab
+local ScriptsTab = Window:Tab({
+    Title = "Scripts",
+    Icon = "code"
+})
+ScriptsTab:Button({
+    Title = "❗ Zenware Crim Aimlock",
+    Desc = "Key: NewSigmaSigmaBoy",
+    Icon = "target",
+    Callback = function()
+        setclipboard("NewSigmaSigmaBoy")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua"))()
+    end
+})
+ScriptsTab:Button({
+    Title = "Demonology ESP",
+    Icon = "eye",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua"))()
+    end
+})
+ScriptsTab:Button({
+    Title = "Build A Boat Script",
+    Icon = "anchor",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"))()
+    end
+})
+ScriptsTab:Button({
+    Title = "Blue Lock Rivals Script",
+    Icon = "footprints",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/bluelock-rivals.lua"))()
+    end
+})
+
+-- Universal Tab
+local UniversalTab = Window:Tab({
+    Title = "Universal",
+    Icon = "globe"
+})
+UniversalTab:Button({
+    Title = "Infinite Yield",
+    Icon = "terminal",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+-- Hubs Tab
+local HubsTab = Window:Tab({
+    Title = "Hubs",
+    Icon = "grid"
+})
+HubsTab:Button({
+    Title = "Skibidi Solara Hub (Orion)",
+    Icon = "zap",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua", true))()
+    end
+})
+HubsTab:Button({
+    Title = "Skibidi Solara Hub (Auto Detect)",
+    Icon = "radar",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield", true))()
+    end
+})
+HubsTab:Button({
+    Title = "Skibidi Hub (Unarchived)",
+    Icon = "folder-open",
+    Callback = function()
+        loadstring(game:HttpGet("https://gitlab.com/skibidi7575006/skibidiidi/-/raw/main/SKIBIDIIHUBB"))()
+    end
+})
