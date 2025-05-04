@@ -13,4 +13,4 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/ref
 for good and safe exploits, visit: https://wearedevs.net/exploits (probably safe)
 
 
-Latest Update : 16.03.2025
+Latest Update : 4.05.2025
