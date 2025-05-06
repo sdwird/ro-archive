@@ -1,9 +1,15 @@
 # ro-archive
 
-## The Script
+## The Script (Rayfield)
 
 ```
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
+```
+
+## The Script (WindUI)
+
+```
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/roarchive-windui"))()
 ```
 ## 📜 Overview
 ⚠️ Important: Use Safe Executors
