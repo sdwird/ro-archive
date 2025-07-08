@@ -1,5 +1,11 @@
 # ro-archive
 
+## The Script (REWRITTEN)
+
+```
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
+```
+
 ## The Script (Rayfield)
 
 ```
