@@ -1,0 +1,158 @@
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+-- Create Rayfield window
+local Window = Rayfield:CreateWindow({
+    Name = "ESP",
+    LoadingTitle = "Universal ESP",
+    LoadingSubtitle = "v",
+    Icon = "eye",
+    Theme = "DarkBlue",
+    ToggleUIKeybind = "K"
+})
+
+-- ESP Tab
+local Tab = Window:CreateTab("ESP Controls", "eye")
+local Section = Tab:CreateSection("Enemy ESP")
+
+-- Load Sense ESP
+local Sense = loadstring(game:HttpGet("https://sirius.menu/sense"))()
+
+-- Configure enemy team ESP defaults
+Sense.teamSettings.enemy.enabled = true
+Sense.teamSettings.enemy.box = false
+Sense.teamSettings.enemy.name = false
+Sense.teamSettings.enemy.tracer = false
+Sense.teamSettings.enemy.healthBar = false
+
+-- Variables
+local espEnabled = false
+local teamCheckEnabled = false
+local highlightEnabled = false
+local highlights = {}
+
+-- Team Check function (only affects ESP, not highlight)
+local function isEnemy(player)
+    if not teamCheckEnabled then
+        return true -- Show ESP for all players if team check off
+    end
+    if player.Team and game.Players.LocalPlayer.Team then
+        return player.Team ~= game.Players.LocalPlayer.Team
+    end
+    return true -- If team info missing, consider enemy
+end
+
+-- Highlight updater function (runs independently)
+local function updateHighlights()
+    while highlightEnabled do
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+                if not highlights[player] then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "SenseHighlight"
+                    highlight.Adornee = player.Character
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    highlight.FillColor = Color3.fromRGB(255, 255, 255)  -- Full white fill
+                    highlight.FillTransparency = 0.3                      -- Slightly transparent fill
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White outline
+                    highlight.OutlineTransparency = 0                      -- Fully visible outline
+                    highlight.Parent = workspace
+                    highlights[player] = highlight
+                end
+            else
+                if highlights[player] then
+                    highlights[player]:Destroy()
+                    highlights[player] = nil
+                end
+            end
+        end
+        wait(1)
+    end
+    -- Cleanup highlights when disabled
+    for _, hl in pairs(highlights) do
+        if hl then hl:Destroy() end
+    end
+    highlights = {}
+end
+
+-- Toggle: ESP Master Switch
+Tab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Callback = function(Value)
+        espEnabled = Value
+        if Value then
+            Sense.Load()
+        else
+            Sense.Unload()
+        end
+    end
+})
+
+-- Toggle: Enemy Box
+Tab:CreateToggle({
+    Name = "Enemy Box",
+    CurrentValue = false,
+    Callback = function(Value)
+        Sense.teamSettings.enemy.box = Value
+    end
+})
+
+-- Toggle: Enemy Name
+Tab:CreateToggle({
+    Name = "Enemy Name",
+    CurrentValue = false,
+    Callback = function(Value)
+        Sense.teamSettings.enemy.name = Value
+    end
+})
+
+-- Toggle: Enemy Tracers
+Tab:CreateToggle({
+    Name = "Enemy Tracers",
+    CurrentValue = false,
+    Callback = function(Value)
+        Sense.teamSettings.enemy.tracer = Value
+    end
+})
+
+-- Toggle: Enemy Health Bar
+Tab:CreateToggle({
+    Name = "Enemy Health Bar",
+    CurrentValue = false,
+    Callback = function(Value)
+        Sense.teamSettings.enemy.healthBar = Value
+    end
+})
+
+-- Toggle: Team Check (only affects ESP)
+Tab:CreateToggle({
+    Name = "Enable Team Check",
+    CurrentValue = false,
+    Callback = function(Value)
+        teamCheckEnabled = Value
+    end
+})
+
+-- Toggle: Highlight (independent, always updates highlights for all alive players)
+Tab:CreateToggle({
+    Name = "Enable Highlight",
+    CurrentValue = false,
+    Callback = function(Value)
+        highlightEnabled = Value
+        if Value then
+            spawn(updateHighlights)
+        end
+    end
+})
+
+-- Optional: Destroy UI button
+Tab:CreateButton({
+    Name = "Destroy UI",
+    Callback = function()
+        Rayfield:Destroy()
+        -- Unload ESP and cleanup highlights on UI destroy
+        Sense.Unload()
+        highlightEnabled = false
+    end
+})
