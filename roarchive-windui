@@ -1,45 +1,79 @@
--- this veriosn is just better then rayfield
--- Load WindUI
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+-- Load WindUI (Advanced Version)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- Create Window
+-- Gradient Title Text
+local function gradient(text, startColor, endColor)
+    local result = ""
+    local length = #text
+
+    for i = 1, length do
+        local t = (i - 1) / math.max(length - 1, 1)
+        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
+        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
+        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
+
+        local char = text:sub(i, i)
+        result = result .. "<font color=\"rgb(" .. r ..", " .. g .. ", " .. b .. ")\">" .. char .. "</font>"
+    end
+
+    return result
+end
+
+-- Popup Welcome
+local Confirmed = false
+WindUI:Popup({
+    Title = "Welcome to ro-archive!",
+    Icon = "rbxassetid://129260712070622",
+    IconThemed = true,
+    Content = "Welcome to the " .. gradient("ro-archive", Color3.fromRGB(0,255,135), Color3.fromRGB(96,239,255)) .. ".\nScripts may auto-close the UI!",
+    Buttons = {
+        { Title = "Close", Variant = "Secondary", Callback = function() end },
+        { Title = "Continue", Icon = "arrow-right", Variant = "Primary", Callback = function() Confirmed = true end }
+    }
+})
+repeat task.wait() until Confirmed
+
+-- Create Main Window
 local Window = WindUI:CreateWindow({
-    Title = "Archive Hub",
+    Title = "ro-archive",
     Icon = "archive",
     Author = "sdwird",
     Folder = "CloudHub",
     Size = UDim2.fromOffset(580, 460),
     Transparent = true,
     Theme = "Dark",
-    UserEnabled = true,
     SideBarWidth = 200,
-    HasOutline = true,
+    ScrollBarEnabled = true,
+    KeySystem = {
+        Key = { "1234" },
+        Note = "The key is 1234",
+        SaveKey = false,
+    },
+    User = { Enabled = true, Anonymous = true }
 })
 
-Window:SetToggleKey(Enum.KeyCode.H)
+Window:SetToggleKey(Enum.KeyCode.G)
 
--- Homepage Tab
-local HomeTab = Window:Tab({
-    Title = "Homepage",
-    Icon = "home"
-})
+Window:CreateTopbarButton("Info", "info", function()
+    WindUI:Notify({ Title = "ro-archive", Content = "Made by sdwird", Duration = 5 })
+end, 998)
+
+-- Homepage
+local HomeTab = Window:Tab({ Title = "Homepage", Icon = "home" })
 HomeTab:Paragraph({
     Title = "READ THIS BEFORE CLICKING ANYTHING",
-    Desc = "❗ On some scripts, the Archive GUI will close and the script will be injected.\nKeys get auto-copied. Press paste (CTRL + V on PC)."
+    Desc = "❗ On some scripts, the ro-archive GUI will close and the script will be injected.\nKeys get auto-copied. Press paste (CTRL + V on PC)."
 })
 HomeTab:Button({
-    Title = "Destroy GUI",
-    Icon = "x",
+    Title = "Toggle UI Visibility",
+    Icon = "eye-off",
     Callback = function()
-        Window:Destroy()
+        Window:Toggle()
     end
 })
 
 -- Scripts Tab
-local ScriptsTab = Window:Tab({
-    Title = "Scripts",
-    Icon = "code"
-})
+local ScriptsTab = Window:Tab({ Title = "Scripts", Icon = "code" })
 ScriptsTab:Button({
     Title = "❗ Zenware Crim Aimlock",
     Desc = "Key: NewSigmaSigmaBoy",
@@ -49,64 +83,90 @@ ScriptsTab:Button({
         loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua"))()
     end
 })
-ScriptsTab:Button({
-    Title = "Demonology ESP",
-    Icon = "eye",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua"))()
-    end
-})
-ScriptsTab:Button({
-    Title = "Build A Boat Script",
-    Icon = "anchor",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"))()
-    end
-})
-ScriptsTab:Button({
-    Title = "Blue Lock Rivals Script",
-    Icon = "footprints",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/bluelock-rivals.lua"))()
-    end
-})
+ScriptsTab:Button({ Title = "Demonology ESP", Icon = "eye", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua"))()
+end })
+ScriptsTab:Button({ Title = "Build A Boat Script", Icon = "anchor", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"))()
+end })
+ScriptsTab:Button({ Title = "Blue Lock Rivals Script", Icon = "footprints", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/bluelock-rivals.lua"))()
+end })
 
 -- Universal Tab
-local UniversalTab = Window:Tab({
-    Title = "Universal",
-    Icon = "globe"
+local UniversalTab = Window:Tab({ Title = "Universal", Icon = "globe" })
+UniversalTab:Button({ Title = "Infinite Yield", Icon = "terminal", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+end })
+
+-- Hubs Tab
+local HubsTab = Window:Tab({ Title = "Hubs", Icon = "grid" })
+HubsTab:Button({ Title = "Skibidi Solara Hub (Orion)", Icon = "zap", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua", true))()
+end })
+HubsTab:Button({ Title = "Skibidi Solara Hub (Auto Detect)", Icon = "radar", Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield", true))()
+end })
+HubsTab:Button({ Title = "Skibidi Hub (Unarchived)", Icon = "folder-open", Callback = function()
+    loadstring(game:HttpGet("https://gitlab.com/skibidi7575006/skibidiidi/-/raw/main/SKIBIDIIHUBB"))()
+end })
+
+-- Settings Tab
+local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+local HttpService = game:GetService("HttpService")
+local folderPath = "WindUI"
+makefolder(folderPath)
+
+local function SaveFile(fileName, data)
+    writefile(folderPath .. "/" .. fileName .. ".json", HttpService:JSONEncode(data))
+end
+local function LoadFile(fileName)
+    local path = folderPath .. "/" .. fileName .. ".json"
+    return isfile(path) and HttpService:JSONDecode(readfile(path)) or nil
+end
+
+local currentFileName = "archive_config"
+
+-- Theme selector
+local themeNames = {}
+for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
+SettingsTab:Dropdown({
+    Title = "Select Theme",
+    Values = themeNames,
+    Value = WindUI:GetCurrentTheme(),
+    Callback = function(theme) WindUI:SetTheme(theme) end
 })
-UniversalTab:Button({
-    Title = "Infinite Yield",
-    Icon = "terminal",
+
+-- Toggle Transparency
+SettingsTab:Toggle({
+    Title = "Window Transparency",
+    Value = WindUI:GetTransparency(),
+    Callback = function(state) Window:ToggleTransparency(state) end
+})
+
+-- Save / Load
+SettingsTab:Button({
+    Title = "Save Settings",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        SaveFile(currentFileName, {
+            Theme = WindUI:GetCurrentTheme(),
+            Transparent = WindUI:GetTransparency()
+        })
     end
 })
 
--- Hubs Tab
-local HubsTab = Window:Tab({
-    Title = "Hubs",
-    Icon = "grid"
-})
-HubsTab:Button({
-    Title = "Skibidi Solara Hub (Orion)",
-    Icon = "zap",
+SettingsTab:Button({
+    Title = "Load Settings",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua", true))()
+        local data = LoadFile(currentFileName)
+        if data then
+            WindUI:SetTheme(data.Theme)
+            Window:ToggleTransparency(data.Transparent)
+        end
     end
 })
-HubsTab:Button({
-    Title = "Skibidi Solara Hub (Auto Detect)",
-    Icon = "radar",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield", true))()
-    end
-})
-HubsTab:Button({
-    Title = "Skibidi Hub (Unarchived)",
-    Icon = "folder-open",
-    Callback = function()
-        loadstring(game:HttpGet("https://gitlab.com/skibidi7575006/skibidiidi/-/raw/main/SKIBIDIIHUBB"))()
-    end
-})
+
+-- Close Event
+Window:OnClose(function()
+    print("ro-archive closed.")
+end)
