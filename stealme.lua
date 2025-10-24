@@ -9,7 +9,7 @@ local Window = Rayfield:CreateWindow({
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "ARCHIVE",
    LoadingSubtitle = "by sdwird",
-   Theme = "Amethyst", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
@@ -46,7 +46,7 @@ local Section = Tab:CreateSection("Homepage")
 --
 local Divider = Tab:CreateDivider()
 --
-local Paragraph = Tab:CreateParagraph({Title = "READ THIS BEFORE CLICKING ANYTHING", Content = "On Some Scripts you will see a ❗ emoji which means the Archive gui will get closed and the script will get injected so be carefull about what you touching /////////////////////////// On scripts that has Keys the key will get automatically copied in to your pc/mobile press paste on the key area and then you are good to go (CTRL + V on pc)"})
+local Label = Tab:CreateLabel("niggas in paris", "rewind")
 --
 local Divider = Tab:CreateDivider()
 --
@@ -56,14 +56,15 @@ local Button = Tab:CreateButton({
        Rayfield:Destroy()
    end,
 })
---------------------------------------------------------- SCRIPTS HERE
 
-local Tab = Window:CreateTab("Scripts")
+
+
 --
-local Section = Tab:CreateSection("if you cant find scripts click to the search logo on top")
---
+local Tab = Window:CreateTab("My favs")
+
+local Section = Tab:CreateSection("favs")
+
 local Divider = Tab:CreateDivider()
----
 
 local Button = Tab:CreateButton({
    Name = "❗zenware crim aimlock (KEY : NewSigmaSigmaBoy)",
@@ -72,27 +73,21 @@ local Button = Tab:CreateButton({
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua"))()
    end,
 })
---
+
 local Button = Tab:CreateButton({
-   Name = "Demonology ESP",
+   Name = "esp",
    Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua"))()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/universal-esp/refs/heads/main/universal-esp.lua"))()
    end,
 })
---
+
 local Button = Tab:CreateButton({
-   Name = "bauaild a boat script",
+   Name = "parkour reborn autofarm",
    Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"))()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/parkour-reborn-farm.lua"))()
    end,
 })
---
-local Button = Tab:CreateButton({
-   Name = "blue lock rivals (the best script gng)",
-   Callback = function()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/bluelock-rivals.lua"))()
-   end,
-})
+
 
 
 
@@ -123,9 +118,16 @@ local Section = Tab:CreateSection("scripts that you can use on every game")
 local Divider = Tab:CreateDivider()
 ---
 local Button = Tab:CreateButton({
-   Name = "Infinite Yield",
+   Name = "Infinite Yield (archived not latest)",
    Callback = function()
        loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/infyield.lua"))()
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Infinite Yield (non-archived)",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
    end,
 })
 ---
@@ -171,9 +173,3 @@ local Button = Tab:CreateButton({
    end,
 })
 --
-local Button = Tab:CreateButton({
-   Name = "Skibidi Solara Hub (not archived can change)",
-   Callback = function()
-       loadstring(game:HttpGet("https://gitlab.com/skibidi7575006/skibidiidi/-/raw/main/SKIBIDIIHUBB"))()
-   end,
-})
