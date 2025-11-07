@@ -1,9 +1,9 @@
 # ro-archive
 
-## The Script (REWRITTEN)
+## The Script (For low end devices)
 
 ```
-not yet bozo
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/ro-archive-lite.lua"))()
 ```
 
 ## The Script (Rayfield)
@@ -12,7 +12,7 @@ not yet bozo
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
 ```
 
-## The Script (WindUI)
+## The Script (WindUI "not working for some reason")
 
 ```
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/roarchive-windui"))()
