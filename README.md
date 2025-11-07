@@ -12,7 +12,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/ref
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/archive.lua"))()
 ```
 
-## The Script (WindUI "not working for some reason")
+## The Script (WindUI)
 
 ```
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/roarchive-windui"))()
