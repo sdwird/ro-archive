@@ -71,6 +71,14 @@ HomeTab:Button({
     Callback = function() Window:Toggle() end
 })
 
+do
+    Window:Tag({
+        Title = "v" .. WindUI.Version,
+        Icon = "github",
+        Color = Color3.fromHex("#6b31ff")
+    })
+end
+
 -- ---------- Scripts data (single source of truth) ----------
 local scriptsList = {
     {
