@@ -1,635 +1,629 @@
--- Load WindUI (Advanced Version) - improved with search + FPS/Ping + Keybind
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+--[[
+    ro-archive (Fixed Edition)
+    English Only | WindUI | ScriptBlox
+    Features: Glow ESP, Fixed Aimlock Smoothing, Target HUD Toggle, All Scripts Restored
+]]
 
--- ---------- Utility: gradient ----------
-local function gradient(text, startColor, endColor)
-    local len = #text
-    if len == 0 then return text end
-    local r1,g1,b1 = startColor.R * 255, startColor.G * 255, startColor.B * 255
-    local r2,g2,b2 = endColor.R * 255, endColor.G * 255, endColor.B * 255
-    local tparts = table.create(len)
-    for i = 1, len do
-        local t = (i - 1) / math.max(len - 1, 1)
-        local r = math.floor(r1 + (r2 - r1) * t)
-        local g = math.floor(g1 + (g2 - g1) * t)
-        local b = math.floor(b1 + (b2 - b1) * t)
-        tparts[i] = string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i,i))
-    end
-    return table.concat(tparts)
-end
-
--- ---------- Popup Welcome ----------
-local Confirmed = false
-WindUI:Popup({
-    Title = "Welcome to ro-archive!",
-    Icon = "rbxassetid://129260712070622",
-    IconThemed = true,
-    Content = "Welcome to the " .. gradient("ro-archive", Color3.fromRGB(0,255,135), Color3.fromRGB(96,239,255)) .. ".\nScripts may auto-close the UI!",
-    Buttons = {
-        { Title = "Close", Variant = "Secondary", Callback = function() end },
-        { Title = "Continue", Icon = "arrow-right", Variant = "Primary", Callback = function() Confirmed = true end }
-    }
-})
-repeat task.wait() until Confirmed
-
--- ---------- Create Main Window ----------
-local Window = WindUI:CreateWindow({
-    Title = "ro-archive",
-    Icon = "archive",
-    Author = "sdwird",
-    Folder = "CloudHub",
-    Size = UDim2.fromOffset(580, 460),
-    Transparent = true,
-    Theme = "Dark",
-    SideBarWidth = 200,
-    ScrollBarEnabled = true,
-    KeySystem = {
-        Key = { "1234" },
-        Note = "The key is 1234",
-        SaveKey = false,
-    },
-    User = { Enabled = true, Anonymous = true }
-})
-
--- default toggle key (can be changed via settings keybind)
-local defaultToggleKey = Enum.KeyCode.H
-Window:SetToggleKey(defaultToggleKey)
-
-Window:CreateTopbarButton("Info", "info", function()
-    WindUI:Notify({ Title = "ro-archive", Content = "Made by sdwird", Duration = 5 })
-end, 998)
-
--- ---------- Homepage ----------
-local HomeTab = Window:Tab({ Title = "Homepage", Icon = "house" })
-HomeTab:Paragraph({
-    Title = "enjoy being a dickhead",
-    Desc = "wassup exploiter"
-})
-HomeTab:Button({
-    Title = "Close ui",
-    Icon = "eye-off",
-    Callback = function() Window:Toggle() end
-})
-
+local WindUI
 do
-    Window:Tag({
-        Title = "v" .. WindUI.Version,
-        Icon = "github",
-        Color = Color3.fromHex("#6b31ff")
-    })
-end
-
--- ---------- Scripts data (single source of truth) ----------
-local scriptsList = {
-    {
-        Title = "Zenware Crim Aimlock",
-        Desc = "Key: NewSigmaSigmaBoy",
-        Icon = "target",
-        Url = "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua",
-        After = function() setclipboard("NewSigmaSigmaBoy") end
-    },
-    {
-        Title = "Demonology ESP",
-        Icon = "eye",
-        Url = "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua"
-    },
-    {
-        Title = "Build A Boat Script",
-        Icon = "anchor",
-        Url = "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua"
-    },
-}
-
-local function safeLoad(url)
-    local ok, res = pcall(function() return game:HttpGet(url, true) end)
-    if ok and res and #res > 0 then
-        local ok2, err = pcall(loadstring(res))
-        if not ok2 then
-            warn("Failed executing script from URL:", url, err)
-        end
-    else
-        warn("Failed fetching URL:", url)
-    end
-end
-
--- ---------- Scripts Tab (with Search Input) ----------
-local ScriptsTab = Window:Tab({ Title = "Scripts", Icon = "book-text" })
-
-ScriptsTab:Input({
-    Title = "Search scripts",
-    Placeholder = "Type script name and press Enter...",
-    Callback = function(value)
-        if not value or value == "" then
-            WindUI:Notify({ Title = "Search", Content = "Type something to search.", Duration = 3 })
-            return
-        end
-
-        local q = value:lower()
-        local matches = {}
-        for _, s in ipairs(scriptsList) do
-            if s.Title:lower():find(q) or (s.Desc and s.Desc:lower():find(q)) then
-                table.insert(matches, s)
-            end
-        end
-
-        if #matches == 0 then
-            WindUI:Notify({ Title = "Search", Content = "No scripts found for: " .. value, Duration = 4 })
-            return
-        end
-
-        local buttons = {}
-        for i = 1, math.min(6, #matches) do
-            local s = matches[i]
-            table.insert(buttons, {
-                Title = s.Title,
-                Desc = s.Desc or "",
-                Icon = s.Icon or "",
-                Callback = function()
-                    if s.After then
-                        pcall(s.After)
-                    end
-                    safeLoad(s.Url)
-                end
-            })
-        end
-
-        WindUI:Popup({
-            Title = "Search results (" .. tostring(#matches) .. ")",
-            Content = "Click a result to execute it.",
-            Buttons = buttons
-        })
-    end
-})
-
-for _, s in ipairs(scriptsList) do
-    ScriptsTab:Button({
-        Title = s.Title,
-        Desc = s.Desc,
-        Icon = s.Icon,
-        Callback = function()
-            if s.After then pcall(s.After) end
-            safeLoad(s.Url)
-        end
-    })
-end
-
--- ---------- Universal Tab ----------
-local UniversalTab = Window:Tab({ Title = "Universal", Icon = "globe" })
-UniversalTab:Button({
-    Title = "Infinite Yield",
-    Icon = "terminal",
-    Callback = function()
-        safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
-    end
-})
-
--- ---------- Hubs Tab ----------
-local HubsTab = Window:Tab({ Title = "Hubs", Icon = "grid" })
-HubsTab:Button({ Title = "Skibidi Solara Hub (Orion)", Icon = "zap", Callback = function()
-    safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua")
-end })
-HubsTab:Button({ Title = "Skibidi Solara Hub (Auto Detect)", Icon = "radar", Callback = function()
-    safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield")
-end })
-HubsTab:Button({ Title = "Solara hub", Icon = "folder-open", Callback = function()
-    safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/solara-hub.lua")
-end })
-
--- ---------- Settings Tab (renamed to "UI" as you requested) ----------
-local SettingsTab = Window:Tab({ Title = "UI", Icon = "settings" })
-local HttpService = game:GetService("HttpService")
-local folderPath = "WindUI"
-pcall(function() makefolder(folderPath) end)
-
-local cfgFile = "archive_config"
-
-local function SaveFile(name, data)
-    local ok, err = pcall(function()
-        writefile(folderPath .. "/" .. name .. ".json", HttpService:JSONEncode(data))
+    local ok, result = pcall(function()
+        return require("./src/Init")
     end)
-    if not ok then warn("Failed saving config:", err) end
-end
-local function LoadFile(name)
-    local path = folderPath .. "/" .. name .. ".json"
-    if isfile(path) then
-        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
-        if ok then return data end
+    if ok then
+        WindUI = result
+    else 
+        WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
     end
-    return nil
 end
 
--- Theme selector
-local themeNames = {}
-for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
-SettingsTab:Dropdown({
-    Title = "Select Theme",
-    Values = themeNames,
-    Value = WindUI:GetCurrentTheme(),
-    Callback = function(theme) WindUI:SetTheme(theme) end
-})
-
--- Window Transparency toggle
-SettingsTab:Toggle({
-    Title = "Window Transparency",
-    Value = WindUI:GetTransparency(),
-    Callback = function(state) Window:ToggleTransparency(state) end
-})
-
--- Keybind to change UI toggle key (uses WindUI Keybind example)
-local currentKey = "H"
-SettingsTab:Keybind({
-    Flag = "UIToggleKeybind",
-    Title = "Toggle UI Key",
-    Desc = "Set a key to open/close UI (default H)",
-    Value = currentKey,
-    Callback = function(v)
-        currentKey = v
-        local ok, enum = pcall(function() return Enum.KeyCode[v] end)
-        if ok and enum then
-            Window:SetToggleKey(enum)
-            WindUI:Notify({ Title = "Keybind", Content = "Toggle key set to: " .. tostring(v), Duration = 3 })
-        else
-            warn("Invalid Key:", v)
-        end
-    end
-})
-
--- ---------- HUD (FPS/Ping/Memory/Instances) ----------
-local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- create HUD once (but don't parent yet)
-local UserInputService = game:GetService("UserInputService")
-local function createHudGui()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "roArchiveStatsHud"
-    screenGui.ResetOnSpawn = false
+-- // 1. Utility Functions // --
 
-    local frame = Instance.new("Frame")
-    frame.Name = "StatsFrame"
-    frame.Size = UDim2.fromOffset(260, 40)
-    frame.Position = UDim2.new(0.02, 0, 0.02, 0)
-    frame.AnchorPoint = Vector2.new(0,0)
-    -- make HUD background fully transparent per user request
-    frame.BackgroundTransparency = 1
-    frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
-    frame.BorderSizePixel = 0
-    frame.ZIndex = 9999
-    frame.Parent = screenGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Name = "StatsLabel"
-    label.Size = UDim2.fromScale(1,1)
-    label.Position = UDim2.fromOffset(0,0)
-    label.BackgroundTransparency = 1
-    label.TextScaled = false
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Center
-    label.TextColor3 = Color3.fromRGB(255,255,255)
-    label.RichText = true
-    label.Text = "FPS: -- | Ping: -- ms"
-    label.Parent = frame
-
-    -- drag: use mouse location for consistent behavior
-    local dragging = false
-    local dragStart, startPos
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = UserInputService:GetMouseLocation()
-            startPos = frame.Position
-            -- ensure dragging stops when mouse button released
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            -- handled in Heartbeat below
-        end
-    end)
-    RunService.Heartbeat:Connect(function()
-        if dragging and dragStart and startPos then
-            local mouseLoc = UserInputService:GetMouseLocation()
-            local delta = mouseLoc - dragStart
-            local screenW, screenH = workspace.CurrentCamera.ViewportSize.X, workspace.CurrentCamera.ViewportSize.Y
-            local newX = startPos.X.Scale + (delta.X / screenW)
-            local newY = startPos.Y.Scale + (delta.Y / screenH)
-            frame.Position = UDim2.new(math.clamp(newX, 0, 1), 0, math.clamp(newY, 0, 1), 0)
-        end
-    end)
-
-    return screenGui, label, frame
+local function safeLoad(url_or_code, isRawCode)
+    if not url_or_code or url_or_code == "" then return end
+    if isRawCode then
+        local ok, err = pcall(function() loadstring(url_or_code)() end)
+        if not ok then WindUI:Notify({ Title = "Error", Content = "Execution failed.", Icon = "alert-triangle" }) end
+    else
+        pcall(function() loadstring(game:HttpGet(url_or_code))() end)
+    end
 end
 
-local function getPingMs()
-    local ok, stats = pcall(function() return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() end)
-    if ok and type(stats) == "number" and stats > 0 then
-        return math.floor(stats + 0.5)
-    end
-    local ok2, ping = pcall(function() return LocalPlayer and LocalPlayer:GetNetworkPing() end)
-    if ok2 and type(ping) == "number" then
-        return math.floor(ping * 1000 + 0.5)
-    end
-    return 0
+local function makeRequest(options)
+    local r = request or http_request or (syn and syn.request) or (fluxus and fluxus.request)
+    if r then return r(options) else return { Body = game:HttpGet(options.Url) } end
 end
 
-local hudGui, statsLabel, hudFrame = createHudGui()
-local hudParented = false
-local hudRunning = false
-local avgDt = 0
-local hudAccum = 0
+local function fetchScriptBlox(query, mode)
+    local url = (mode == "trending") and "https://scriptblox.com/api/script/trending" or "https://scriptblox.com/api/script/search?q=" .. HttpService:UrlEncode(query) .. "&mode=free&max=25"
+    local s, r = pcall(function() return makeRequest({ Url = url, Method = "GET" }) end)
+    if s and r.Body then
+        local d = HttpService:JSONDecode(r.Body)
+        if d and d.result then return d.result.scripts end
+    end
+    return {}
+end
 
-local HUD_SETTINGS = {
-    HUDEnabled = false,
-    ShowMemory = true,
-    ShowInstances = false,
-    InstanceSampleRate = 2.0
-    ,ShowFPS = true,
-    ShowPing = true,
-    -- 0 = update every frame; >0 = minimum seconds between HUD updates
-    UpdateInterval = 0
+-- // 2. Player Logic // --
+local PlayerConfig = { Speed = 16, Jump = 50, LoopSpeed = false, LoopJump = false }
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChild("Humanoid")
+    if hum then
+        if PlayerConfig.LoopSpeed then hum.WalkSpeed = PlayerConfig.Speed end
+        if PlayerConfig.LoopJump then hum.UseJumpPower = true; hum.JumpPower = PlayerConfig.Jump end
+    end
+end)
+
+-- // 3. Ultimate ESP System // --
+local ESP = {
+    Enabled = false,
+    Boxes = false,
+    Names = false,
+    Health = false,
+    Tracers = false,
+    Skeleton = false,
+    Chams = false, 
+    TeamCheck = false,
+    EnemyColor = Color3.fromRGB(255, 60, 60),
+    TeamColor = Color3.fromRGB(60, 255, 60),
+    Drawings = {},
+    Highlights = {}
 }
 
--- keep HUD visible when WindUI toggles
-local KEEP_HUD_VISIBLE = true
-
--- Colors (defaults)
-HUD_SETTINGS.AccentColor = Color3.fromRGB(255, 255, 255) -- used for FPS label accent
-HUD_SETTINGS.PingColor = Color3.fromRGB(180, 180, 255)
-HUD_SETTINGS.MemColor = Color3.fromRGB(180, 255, 180)
-HUD_SETTINGS.InstColor = Color3.fromRGB(255, 200, 120)
-HUD_SETTINGS.BGColor = Color3.fromRGB(18,18,18)
-
-local lastInstanceSample = 0
-local instanceCount = 0
-
-local function composeHudText(fps, instFps, ping, memMB, instances)
-    local parts = {}
-    local function rgb(c)
-        return math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5)
-    end
-    local ar,ag,ab = rgb(HUD_SETTINGS.AccentColor)
-    local pr,pg,pb = rgb(HUD_SETTINGS.PingColor)
-    local mr,mg,mb = rgb(HUD_SETTINGS.MemColor)
-    local ir,ig,ib = rgb(HUD_SETTINGS.InstColor)
-    if HUD_SETTINGS.ShowFPS then
-        table.insert(parts, string.format('<font color="rgb(%d,%d,%d)"><b>FPS:</b> %d</font>', ar,ag,ab, fps))
-        table.insert(parts, string.format('<font color="rgb(%d,%d,%d)">(<i>inst:%d</i>)</font>', 200,200,200, instFps))
-    end
-    if HUD_SETTINGS.ShowPing then
-        table.insert(parts, string.format('<font color="rgb(%d,%d,%d)"><b>Ping:</b> %dms</font>', pr,pg,pb, ping))
-    end
-    if HUD_SETTINGS.ShowMemory and memMB then
-        table.insert(parts, string.format('<font color="rgb(%d,%d,%d)"><b>Mem:</b> %.2fMB</font>', mr,mg,mb, memMB))
-    end
-    if HUD_SETTINGS.ShowInstances and instances then
-        table.insert(parts, string.format('<font color="rgb(%d,%d,%d)"><b>Inst:</b> %d</font>', ir,ig,ib, instances))
-    end
-    return table.concat(parts, '  |  ')
+local function CreateDrawing(type, props)
+    local draw = Drawing.new(type)
+    for k, v in pairs(props) do draw[k] = v end
+    return draw
 end
 
-local hudUpdateConn
-local function startHud()
-    if hudParented then return end
-    hudGui.Parent = (LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")) or game:GetService("CoreGui")
-    hudParented = true
-    hudRunning = true
-    HUD_SETTINGS.HUDEnabled = true
+local function ClearESP(plr)
+    if ESP.Drawings[plr] then
+        for _, v in pairs(ESP.Drawings[plr]) do 
+            if type(v) == "table" then for _, l in pairs(v) do l:Remove() end 
+            else v:Remove() end
+        end
+        ESP.Drawings[plr] = nil
+    end
+    if ESP.Highlights[plr] then
+        ESP.Highlights[plr]:Destroy()
+        ESP.Highlights[plr] = nil
+    end
+end
 
-    hudUpdateConn = RunService.RenderStepped:Connect(function(dt)
-        -- always update smoothing accumulator for FPS
-        avgDt = (avgDt * 0.85) + (dt * 0.15)
-        hudAccum = hudAccum + dt
+-- Bone Connections
+local SkeletonConnections = {
+    {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"}, {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}, {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"},
+    {"LeftLowerArm", "LeftHand"}, {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"}
+}
+local SkeletonConnectionsR6 = {
+    {"Head", "Torso"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"}
+}
 
-        -- if UpdateInterval is 0, update every frame; otherwise wait until accumulator exceeds interval
-        if HUD_SETTINGS.UpdateInterval <= 0 or hudAccum >= HUD_SETTINGS.UpdateInterval then
-            local smoothedFps = math.floor(1 / math.max(0.0001, avgDt) + 0.5)
-            local instFps = math.floor(1 / math.max(0.0001, dt) + 0.5)
-            local ping = HUD_SETTINGS.ShowPing and getPingMs() or 0
-            local memKB = collectgarbage("count") or 0
-            local memMB = memKB / 1024
+local function UpdateESP()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            if not ESP.Enabled then ClearESP(plr); continue end
 
-            -- advance instance sample timer by the elapsed time since last HUD update
-            lastInstanceSample = lastInstanceSample + hudAccum
-            if HUD_SETTINGS.ShowInstances and lastInstanceSample >= HUD_SETTINGS.InstanceSampleRate then
-                lastInstanceSample = 0
-                local ok, count = pcall(function() return #game:GetDescendants() end)
-                if ok and type(count) == "number" then
-                    instanceCount = count
+            local char = plr.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+
+            if char and hum and root and hum.Health > 0 then
+                local isEnemy = true
+                if ESP.TeamCheck and plr.Team == LocalPlayer.Team then isEnemy = false end
+                local color = isEnemy and ESP.EnemyColor or ESP.TeamColor
+
+                -- GLOW
+                if ESP.Chams then
+                    if not ESP.Highlights[plr] then
+                        local hl = Instance.new("Highlight")
+                        hl.Name = "EspHighlight"
+                        hl.FillTransparency = 0.5
+                        hl.OutlineTransparency = 0
+                        hl.Adornee = char
+                        hl.Parent = game:GetService("CoreGui")
+                        ESP.Highlights[plr] = hl
+                    end
+                    ESP.Highlights[plr].FillColor = color
+                    ESP.Highlights[plr].OutlineColor = color
+                    ESP.Highlights[plr].Enabled = true
+                else
+                    if ESP.Highlights[plr] then ESP.Highlights[plr].Enabled = false end
+                end
+
+                -- DRAWINGS
+                if not ESP.Drawings[plr] then
+                    ESP.Drawings[plr] = {
+                        Box = CreateDrawing("Square", {Thickness = 1.5, Filled = false, Transparency = 1}),
+                        Name = CreateDrawing("Text", {Size = 13, Center = true, Outline = true, Font = 2}),
+                        HealthBar = CreateDrawing("Line", {Thickness = 2, Transparency = 1}),
+                        Tracer = CreateDrawing("Line", {Thickness = 1, Transparency = 1}),
+                        SkeletonLines = {} 
+                    }
+                end
+                
+                local objs = ESP.Drawings[plr]
+                local vector, onScreen = Camera:WorldToViewportPoint(root.Position)
+
+                if onScreen then
+                    local head = char:FindFirstChild("Head")
+                    local topPos = head and (head.Position + Vector3.new(0, 0.5, 0)) or (root.Position + Vector3.new(0, 3, 0))
+                    local botPos = root.Position - Vector3.new(0, 3.5, 0)
+                    local topVec = Camera:WorldToViewportPoint(topPos)
+                    local botVec = Camera:WorldToViewportPoint(botPos)
+                    local height = math.abs(topVec.Y - botVec.Y)
+                    local width = height / 1.6
+                    local boxPos = Vector2.new(vector.X - width / 2, vector.Y - height / 2)
+
+                    if ESP.Boxes then
+                        objs.Box.Visible = true; objs.Box.Color = color
+                        objs.Box.Size = Vector2.new(width, height); objs.Box.Position = boxPos
+                    else objs.Box.Visible = false end
+
+                    if ESP.Names then
+                        objs.Name.Visible = true; objs.Name.Color = color
+                        objs.Name.Text = string.format("%s [%dm]", plr.Name, math.floor((root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude))
+                        objs.Name.Position = Vector2.new(vector.X, vector.Y - height / 2 - 16)
+                    else objs.Name.Visible = false end
+
+                    if ESP.Health then
+                        local hp = hum.Health / hum.MaxHealth
+                        objs.HealthBar.Visible = true; objs.HealthBar.Color = Color3.fromHSV(hp * 0.3, 1, 1)
+                        objs.HealthBar.From = Vector2.new(boxPos.X - 5, boxPos.Y + height)
+                        objs.HealthBar.To = Vector2.new(boxPos.X - 5, boxPos.Y + height - (height * hp))
+                    else objs.HealthBar.Visible = false end
+
+                    if ESP.Tracers then
+                        objs.Tracer.Visible = true; objs.Tracer.Color = color
+                        objs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        objs.Tracer.To = Vector2.new(vector.X, vector.Y)
+                    else objs.Tracer.Visible = false end
+                    
+                    if ESP.Skeleton then
+                        local rigType = (char:FindFirstChild("UpperTorso")) and "R15" or "R6"
+                        local conns = (rigType == "R15") and SkeletonConnections or SkeletonConnectionsR6
+                        
+                        if #objs.SkeletonLines < #conns then
+                            for i = 1, #conns do
+                                if not objs.SkeletonLines[i] then
+                                    objs.SkeletonLines[i] = CreateDrawing("Line", {Thickness = 1.5, Transparency = 1})
+                                end
+                            end
+                        end
+
+                        for i, connection in ipairs(conns) do
+                            local p1 = char:FindFirstChild(connection[1])
+                            local p2 = char:FindFirstChild(connection[2])
+                            local line = objs.SkeletonLines[i]
+
+                            if p1 and p2 and line then
+                                local v1, s1 = Camera:WorldToViewportPoint(p1.Position)
+                                local v2, s2 = Camera:WorldToViewportPoint(p2.Position)
+
+                                if s1 and s2 then
+                                    line.Visible = true; line.Color = color
+                                    line.From = Vector2.new(v1.X, v1.Y)
+                                    line.To = Vector2.new(v2.X, v2.Y)
+                                else line.Visible = false end
+                            elseif line then line.Visible = false end
+                        end
+                    else
+                        for _, line in pairs(objs.SkeletonLines) do line.Visible = false end
+                    end
+
+                else
+                    objs.Box.Visible = false; objs.Name.Visible = false; objs.HealthBar.Visible = false; objs.Tracer.Visible = false
+                    for _, line in pairs(objs.SkeletonLines) do line.Visible = false end
+                end
+            else ClearESP(plr) end
+        else ClearESP(plr) end
+    end
+end
+RunService.RenderStepped:Connect(UpdateESP)
+Players.PlayerRemoving:Connect(ClearESP)
+
+-- // 4. Target HUD System // --
+local TargetHUD = {
+    Gui = nil,
+    Container = nil,
+    Viewport = nil,
+    NameLabel = nil,
+    ToolLabel = nil,
+    HealthBar = nil,
+    HealthText = nil,
+    CurrentTarget = nil
+}
+
+local function CreateTargetHUD()
+    if TargetHUD.Gui then TargetHUD.Gui:Destroy() end
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "roArchiveTargetHUD"
+    gui.Parent = game:GetService("CoreGui")
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.fromOffset(260, 90)
+    frame.Position = UDim2.new(0.5, 40, 0.5, -45)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    frame.BorderSizePixel = 0
+    frame.BackgroundTransparency = 0.1
+    frame.Visible = false
+    frame.Parent = gui
+    
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 8); corner.Parent = frame
+    local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(0, 255, 135); stroke.Parent = frame
+
+    local view = Instance.new("ViewportFrame")
+    view.Size = UDim2.fromOffset(80, 80)
+    view.Position = UDim2.fromOffset(5, 5)
+    view.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    view.BorderSizePixel = 0
+    view.BackgroundTransparency = 0.5
+    view.Parent = frame
+    local vCorner = Instance.new("UICorner"); vCorner.CornerRadius = UDim.new(0, 6); vCorner.Parent = view
+
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -95, 0, 25)
+    nameLbl.Position = UDim2.fromOffset(90, 5)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextSize = 16
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+    nameLbl.Text = "Target Name"
+    nameLbl.Parent = frame
+
+    local toolLbl = Instance.new("TextLabel")
+    toolLbl.Size = UDim2.new(1, -95, 0, 20)
+    toolLbl.Position = UDim2.fromOffset(90, 30)
+    toolLbl.BackgroundTransparency = 1
+    toolLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    toolLbl.Font = Enum.Font.Gotham
+    toolLbl.TextSize = 13
+    toolLbl.TextXAlignment = Enum.TextXAlignment.Left
+    toolLbl.Text = "Holding: None"
+    toolLbl.Parent = frame
+
+    local hpBg = Instance.new("Frame")
+    hpBg.Size = UDim2.new(1, -100, 0, 6)
+    hpBg.Position = UDim2.fromOffset(90, 65)
+    hpBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    hpBg.BorderSizePixel = 0
+    hpBg.Parent = frame
+    local hpCorner = Instance.new("UICorner"); hpCorner.Parent = hpBg
+    
+    local hpFill = Instance.new("Frame")
+    hpFill.Size = UDim2.fromScale(1, 1)
+    hpFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+    hpFill.BorderSizePixel = 0
+    hpFill.Parent = hpBg
+    local fillCorner = Instance.new("UICorner"); fillCorner.Parent = hpFill
+    
+    local hpText = Instance.new("TextLabel")
+    hpText.Size = UDim2.new(1, -100, 0, 15)
+    hpText.Position = UDim2.fromOffset(90, 72)
+    hpText.BackgroundTransparency = 1
+    hpText.TextColor3 = Color3.fromRGB(150, 150, 150)
+    hpText.Font = Enum.Font.GothamBold
+    hpText.TextSize = 11
+    hpText.TextXAlignment = Enum.TextXAlignment.Left
+    hpText.Text = "100/100 HP"
+    hpText.Parent = frame
+
+    TargetHUD.Gui = gui
+    TargetHUD.Container = frame
+    TargetHUD.Viewport = view
+    TargetHUD.NameLabel = nameLbl
+    TargetHUD.ToolLabel = toolLbl
+    TargetHUD.HealthBar = hpFill
+    TargetHUD.HealthText = hpText
+end
+
+local function UpdateTargetHUD(target)
+    if not TargetHUD.Gui then CreateTargetHUD() end
+    
+    if not target or not target.Character then
+        TargetHUD.Container.Visible = false
+        TargetHUD.CurrentTarget = nil
+        return
+    end
+
+    TargetHUD.Container.Visible = true
+    TargetHUD.NameLabel.Text = target.Name
+
+    local hum = target.Character:FindFirstChild("Humanoid")
+    if hum then
+        local hp = math.floor(hum.Health)
+        local maxHp = math.floor(hum.MaxHealth)
+        TargetHUD.HealthBar.Size = UDim2.fromScale(math.clamp(hp/maxHp, 0, 1), 1)
+        TargetHUD.HealthBar.BackgroundColor3 = Color3.fromHSV((hp/maxHp)*0.3, 1, 1)
+        TargetHUD.HealthText.Text = hp .. " / " .. maxHp .. " HP"
+    end
+
+    local tool = target.Character:FindFirstChildOfClass("Tool")
+    if tool then
+        TargetHUD.ToolLabel.Text = "Holding: " .. tool.Name
+        TargetHUD.ToolLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        TargetHUD.ToolLabel.Text = "Holding: None"
+        TargetHUD.ToolLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    end
+
+    if TargetHUD.CurrentTarget ~= target then
+        TargetHUD.CurrentTarget = target
+        TargetHUD.Viewport:ClearAllChildren()
+        
+        local worldModel = Instance.new("WorldModel")
+        worldModel.Parent = TargetHUD.Viewport
+        local cam = Instance.new("Camera")
+        cam.Parent = TargetHUD.Viewport
+        TargetHUD.Viewport.CurrentCamera = cam
+        
+        target.Character.Archivable = true
+        local clone = target.Character:Clone()
+        clone.Parent = worldModel
+        
+        local root = clone:FindFirstChild("HumanoidRootPart") or clone:FindFirstChild("Torso") or clone:FindFirstChild("Head")
+        if root then
+            cam.CFrame = CFrame.new(root.Position + (root.CFrame.LookVector * 5) + Vector3.new(0, 2, 0), root.Position)
+        end
+        
+        for _, v in pairs(clone:GetDescendants()) do
+            if v:IsA("Script") or v:IsA("LocalScript") then v:Destroy() end
+        end
+    end
+end
+
+CreateTargetHUD()
+
+-- // 5. Aimlock System (Fixed Smoothing) // --
+local Aimlock = {
+    Enabled = false,
+    Key = Enum.KeyCode.E,
+    IsHolding = false,
+    LockedTarget = nil,
+    FOV = 100,
+    ShowFOV = false,
+    Smoothing = 0, 
+    TargetPart = "Head",
+    TeamCheck = false,
+    WallCheck = false,
+    UseHUD = true -- Default enabled
+}
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.5; FOVCircle.NumSides = 64; FOVCircle.Radius = 100; FOVCircle.Filled = false; FOVCircle.Visible = false; FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+
+local function IsVisible(targetPart)
+    if not Aimlock.WallCheck then return true end
+    local origin = Camera.CFrame.Position
+    local direction = targetPart.Position - origin
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    local result = Workspace:Raycast(origin, direction, params)
+    return (result and result.Instance:IsDescendantOf(targetPart.Parent))
+end
+
+local function GetBestTarget()
+    local closest = nil
+    local shortestDist = Aimlock.FOV
+    local mousePos = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            if Aimlock.TeamCheck and plr.Team == LocalPlayer.Team then continue end
+            
+            local char = plr.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            local part = char and char:FindFirstChild(Aimlock.TargetPart)
+
+            if char and hum and hum.Health > 0 and part then
+                local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                if onScreen then
+                    local dist = (mousePos - Vector2.new(pos.X, pos.Y)).Magnitude
+                    if dist < shortestDist then
+                        if IsVisible(part) then
+                            closest = plr
+                            shortestDist = dist
+                        end
+                    end
                 end
             end
-
-            statsLabel.Text = composeHudText(smoothedFps, instFps, ping, memMB, instanceCount)
-            hudAccum = 0
         end
-    end)
+    end
+    return closest
 end
 
-local function stopHud()
-    if hudUpdateConn then
-        hudUpdateConn:Disconnect()
-        hudUpdateConn = nil
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Aimlock.Key and Aimlock.Enabled then 
+        Aimlock.IsHolding = true 
+        Aimlock.LockedTarget = GetBestTarget()
     end
-    if hudGui and hudGui.Parent then
-        hudGui.Parent = nil
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Aimlock.Key then 
+        Aimlock.IsHolding = false; 
+        Aimlock.LockedTarget = nil
+        UpdateTargetHUD(nil) 
     end
-    hudParented = false
-    hudRunning = false
-    HUD_SETTINGS.HUDEnabled = false
-end
-
-SettingsTab:Toggle({
-    Title = "Show FPS & Ping HUD",
-    Value = HUD_SETTINGS.HUDEnabled,
-    Callback = function(state)
-        if state then startHud() else stopHud() end
-    end
-})
-
-SettingsTab:Toggle({
-    Title = "Show Memory Usage (MB)",
-    Value = HUD_SETTINGS.ShowMemory,
-    Callback = function(state)
-        HUD_SETTINGS.ShowMemory = state
-    end
-})
-
-SettingsTab:Toggle({
-    Title = "Show Instance Count",
-    Value = HUD_SETTINGS.ShowInstances,
-    Callback = function(state)
-        HUD_SETTINGS.ShowInstances = state
-    end
-})
-
--- allow toggling FPS / Ping display independently
-pcall(function()
-    SettingsTab:Toggle({
-        Title = "Show FPS",
-        Value = HUD_SETTINGS.ShowFPS,
-        Callback = function(state)
-            HUD_SETTINGS.ShowFPS = state
-        end
-    })
 end)
 
-pcall(function()
-    SettingsTab:Toggle({
-        Title = "Show Ping",
-        Value = HUD_SETTINGS.ShowPing,
-        Callback = function(state)
-            HUD_SETTINGS.ShowPing = state
-        end
-    })
-end)
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Visible = Aimlock.Enabled and Aimlock.ShowFOV
+    FOVCircle.Radius = Aimlock.FOV
+    FOVCircle.Position = UserInputService:GetMouseLocation()
 
--- ---------- FPS Tab (controls & quick actions) ----------
-local FpsTab = Window:Tab({ Title = "FPS", Icon = "zap" })
+    if Aimlock.Enabled and Aimlock.IsHolding and Aimlock.LockedTarget then
+        local target = Aimlock.LockedTarget
+        local char = target.Character
+        local part = char and char:FindFirstChild(Aimlock.TargetPart)
+        local hum = char and char:FindFirstChild("Humanoid")
 
-FpsTab:Paragraph({ Title = "HUD", Desc = "Controls for the FPS/Ping HUD." })
-FpsTab:Toggle({
-    Title = "Keep HUD visible when UI hidden",
-    Value = true,
-    Callback = function(state)
-        -- if false, hiding the window will not affect HUD (we by default keep HUD independent)
-        KEEP_HUD_VISIBLE = state
-    end
-})
+        if char and part and hum and hum.Health > 0 then
+            
+            -- Handle HUD based on toggle
+            if Aimlock.UseHUD then UpdateTargetHUD(target) else UpdateTargetHUD(nil) end
 
-FpsTab:Button({ Title = "Show HUD", Callback = function() startHud() end })
-FpsTab:Button({ Title = "Hide HUD", Callback = function() stopHud() end })
-FpsTab:Button({ Title = "Reset Instance Count", Callback = function() instanceCount = 0 WindUI:Notify({ Title = "FPS", Content = "Instance count reset", Duration = 2 }) end })
-FpsTab:Button({ Title = "Reset HUD Position", Callback = function()
-    if hudFrame then hudFrame.Position = UDim2.new(0.02,0,0.02,0) end
-    WindUI:Notify({ Title = "FPS", Content = "HUD position reset", Duration = 2 })
-end })
-
--- Slider: HUD update interval (seconds)
-pcall(function()
-    FpsTab:Slider({
-        Flag = "HUD_UpdateInterval",
-        Title = "HUD Update Interval (s)",
-        Desc = "0 = every frame; larger = fewer updates",
-        Value = { Min = 0, Max = 1, Default = HUD_SETTINGS.UpdateInterval },
-        Step = 0.01,
-        Callback = function(val)
-            HUD_SETTINGS.UpdateInterval = tonumber(val) or 0
-            WindUI:Notify({ Title = "HUD", Content = "Update interval set to " .. tostring(HUD_SETTINGS.UpdateInterval) .. "s", Duration = 2 })
-        end
-    })
-end)
-
--- Color pickers for HUD
-FpsTab:Colorpicker({
-    Flag = "HUD_AccentColor",
-    Title = "Accent Color",
-    Desc = "Color for FPS text accent",
-    Default = HUD_SETTINGS.AccentColor,
-    Transparency = 0,
-    Callback = function(color)
-        HUD_SETTINGS.AccentColor = color
-    end
-})
-
-FpsTab:Colorpicker({
-    Flag = "HUD_BackgroundColor",
-    Title = "HUD Background",
-    Desc = "Background color for HUD frame",
-    Default = HUD_SETTINGS.BGColor,
-    Transparency = 40,
-    Callback = function(color)
-        HUD_SETTINGS.BGColor = color
-        if hudFrame then hudFrame.BackgroundColor3 = color end
-    end
-})
-
-
--- ---------- Save / Load Buttons (keep functionality, but include new fields) ----------
-SettingsTab:Button({
-    Title = "Save Settings",
-    Callback = function()
-        local hudPos = nil
-        if hudFrame then
-            local p = hudFrame.Position
-            hudPos = { XScale = p.X.Scale, XOffset = p.X.Offset, YScale = p.Y.Scale, YOffset = p.Y.Offset }
-        end
-        SaveFile(cfgFile, {
-            Theme = WindUI:GetCurrentTheme(),
-            Transparent = WindUI:GetTransparency(),
-            UIToggleKey = tostring(currentKey),
-            HUDEnabled = hudRunning,
-            HUD_ShowMemory = HUD_SETTINGS.ShowMemory,
-            HUD_ShowInstances = HUD_SETTINGS.ShowInstances,
-            HUD_ShowFPS = HUD_SETTINGS.ShowFPS,
-            HUD_ShowPing = HUD_SETTINGS.ShowPing,
-            HUD_UpdateInterval = HUD_SETTINGS.UpdateInterval,
-            HUD_Position = hudPos,
-            HUD_KeepVisible = KEEP_HUD_VISIBLE,
-            HUD_AccentColor = { math.floor(HUD_SETTINGS.AccentColor.R * 255 + 0.5), math.floor(HUD_SETTINGS.AccentColor.G * 255 + 0.5), math.floor(HUD_SETTINGS.AccentColor.B * 255 + 0.5) },
-            HUD_BackgroundColor = { math.floor(HUD_SETTINGS.BGColor.R * 255 + 0.5), math.floor(HUD_SETTINGS.BGColor.G * 255 + 0.5), math.floor(HUD_SETTINGS.BGColor.B * 255 + 0.5) }
-        })
-
-        WindUI:Notify({ Title = "Saved", Content = "Settings saved", Duration = 3 })
-    end
-})
-
-SettingsTab:Button({
-    Title = "Load Settings",
-    Callback = function()
-        local data = LoadFile(cfgFile)
-        if data then
-            if data.Theme then WindUI:SetTheme(data.Theme) end
-            if data.Transparent ~= nil then Window:ToggleTransparency(data.Transparent) end
-            if data.UIToggleKey then
-                local keyname = tostring(data.UIToggleKey)
-                pcall(function()
-                    Window:SetToggleKey(Enum.KeyCode[keyname])
-                end)
+            if Aimlock.WallCheck and not IsVisible(part) then 
+                Aimlock.LockedTarget = nil 
+                UpdateTargetHUD(nil)
+                return 
             end
-            if data.HUDEnabled then startHud() else stopHud() end
-            if data.HUD_ShowMemory ~= nil then HUD_SETTINGS.ShowMemory = data.HUD_ShowMemory end
-            if data.HUD_ShowInstances ~= nil then HUD_SETTINGS.ShowInstances = data.HUD_ShowInstances end
-            if data.HUD_ShowFPS ~= nil then HUD_SETTINGS.ShowFPS = data.HUD_ShowFPS end
-            if data.HUD_ShowPing ~= nil then HUD_SETTINGS.ShowPing = data.HUD_ShowPing end
-            if data.HUD_UpdateInterval ~= nil then HUD_SETTINGS.UpdateInterval = tonumber(data.HUD_UpdateInterval) or HUD_SETTINGS.UpdateInterval end
-                if data.HUD_Position and hudFrame then
-                    local p = data.HUD_Position
-                    local ok, err = pcall(function()
-                        hudFrame.Position = UDim2.new(p.XScale or 0.02, p.XOffset or 0, p.YScale or 0.02, p.YOffset or 0)
-                    end)
-                    if not ok then warn("Failed to apply HUD position", err) end
-                end
-                if data.HUD_KeepVisible ~= nil then KEEP_HUD_VISIBLE = data.HUD_KeepVisible end
-                if data.HUD_AccentColor and type(data.HUD_AccentColor) == "table" then
-                    local c = data.HUD_AccentColor
-                    HUD_SETTINGS.AccentColor = Color3.fromRGB(c[1] or 255, c[2] or 255, c[3] or 255)
-                end
-                if data.HUD_BackgroundColor and type(data.HUD_BackgroundColor) == "table" then
-                    local c = data.HUD_BackgroundColor
-                    HUD_SETTINGS.BGColor = Color3.fromRGB(c[1] or 18, c[2] or 18, c[3] or 18)
-                    if hudFrame then hudFrame.BackgroundColor3 = HUD_SETTINGS.BGColor end
-                end
-            WindUI:Notify({ Title = "Loaded", Content = "Settings loaded", Duration = 3 })
+
+            local currentCFrame = Camera.CFrame
+            local targetCFrame = CFrame.new(currentCFrame.Position, part.Position)
+            
+            -- FIXED SMOOTHING LOGIC
+            -- If smoothing is 0: Alpha = 1 (Instant)
+            -- If smoothing is 10: Alpha = ~0.09 (Slow)
+            local alpha = 1 / (Aimlock.Smoothing + 1)
+            
+            Camera.CFrame = currentCFrame:Lerp(targetCFrame, alpha)
         else
-            WindUI:Notify({ Title = "Load", Content = "No saved config found.", Duration = 3 })
+            Aimlock.LockedTarget = nil
+            UpdateTargetHUD(nil)
         end
+    else
+        UpdateTargetHUD(nil)
+    end
+end)
+
+-- // 6. UI // --
+local Window = WindUI:CreateWindow({
+    Title = "ro-archive  |  Fixed Edition",
+    Author = "sdwird",
+    Folder = "ro-archive-fix",
+    Icon = "archive", 
+    IconSize = 20,
+    NewElements = true,
+    Transparent = true, 
+    Theme = "Dark",
+    KeySystem = { Title = "Security", Note = "Key: 1234", KeyValidator = function(k) return k == "1234" end }
+})
+
+local MainSection = Window:Section({ Title = "Dashboard" })
+local PlayerSection = Window:Section({ Title = "Player & Combat" })
+local CloudSection = Window:Section({ Title = "Cloud" })
+local SettingsSection = Window:Section({ Title = "Settings" })
+
+-- Dashboard
+local HomeTab = MainSection:Tab({ Title = "Home", Icon = "house" })
+HomeTab:Paragraph({ Title = "ro-archive", Desc = "Script Hub & Tools", Image = "rbxassetid://129260712070622", ImageSize = 48 })
+HomeTab:Button({ Title = "Close Interface", Icon = "eye-off", Color = Color3.fromHex("#ff4830"), Callback = function() Window:Toggle() end })
+Window:Tag({ Title = "v" .. WindUI.Version, Icon = "github", Color = Color3.fromHex("#6b31ff") })
+
+-- Local Scripts
+local LocalTab = MainSection:Tab({ Title = "Local Scripts", Icon = "file-code" })
+local function addLocalScript(title, desc, icon, url, afterInfo)
+    LocalTab:Button({ Title = title, Desc = desc, Icon = icon, Callback = function() if afterInfo then pcall(afterInfo) end safeLoad(url, false) end })
+end
+addLocalScript("Zenware Crim Aimlock", "Key: NewSigmaSigmaBoy", "target", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua", function() setclipboard("NewSigmaSigmaBoy") end)
+addLocalScript("Demonology ESP", "Visuals only", "eye", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua") -- RESTORED
+addLocalScript("Build A Boat", "Auto farm & tools", "anchor", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua")
+
+-- Hubs
+local HubsTab = MainSection:Tab({ Title = "Hubs", Icon = "globe" })
+HubsTab:Section({ Title = "Universal" })
+HubsTab:Button({ Title = "Infinite Yield", Icon = "terminal", Callback = function() safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", false) end })
+
+HubsTab:Section({ Title = "Solara Hubs" }) -- RESTORED
+HubsTab:Button({ Title = "Skibidi Solara (Orion)", Icon = "zap", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua", false) end })
+HubsTab:Button({ Title = "Skibidi Solara (Auto)", Icon = "radar", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield", false) end })
+HubsTab:Button({ Title = "Solara Hub (Normal)", Icon = "folder-open", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/solara-hub.lua", false) end })
+
+-- [ PLAYER FUNCTIONS ] --
+local MoveTab = PlayerSection:Tab({ Title = "Movement", Icon = "footprints" })
+MoveTab:Slider({ Title = "Walk Speed", Value = { Min = 16, Max = 300, Default = 16 }, Callback = function(v) PlayerConfig.Speed = v; if not PlayerConfig.LoopSpeed then LocalPlayer.Character.Humanoid.WalkSpeed = v end end })
+MoveTab:Toggle({ Title = "Loop Speed", Value = false, Callback = function(v) PlayerConfig.LoopSpeed = v end })
+MoveTab:Slider({ Title = "Jump Power", Value = { Min = 50, Max = 300, Default = 50 }, Callback = function(v) PlayerConfig.Jump = v; if not PlayerConfig.LoopJump then LocalPlayer.Character.Humanoid.JumpPower = v end end })
+MoveTab:Toggle({ Title = "Loop Jump", Value = false, Callback = function(v) PlayerConfig.LoopJump = v end })
+
+local VisualsTab = PlayerSection:Tab({ Title = "Visuals", Icon = "eye" })
+VisualsTab:Toggle({ Title = "Enable ESP", Value = false, Callback = function(v) ESP.Enabled = v end })
+VisualsTab:Section({ Title = "Features" })
+VisualsTab:Toggle({ Title = "Glowing Chams", Value = false, Callback = function(v) ESP.Chams = v end })
+VisualsTab:Toggle({ Title = "Skeleton", Value = false, Callback = function(v) ESP.Skeleton = v end })
+VisualsTab:Toggle({ Title = "2D Boxes", Value = false, Callback = function(v) ESP.Boxes = v end })
+VisualsTab:Toggle({ Title = "Names & Distance", Value = false, Callback = function(v) ESP.Names = v end })
+VisualsTab:Toggle({ Title = "Health Bar", Value = false, Callback = function(v) ESP.Health = v end })
+VisualsTab:Toggle({ Title = "Tracers", Value = false, Callback = function(v) ESP.Tracers = v end })
+VisualsTab:Section({ Title = "Settings" })
+VisualsTab:Toggle({ Title = "Team Check", Value = false, Callback = function(v) ESP.TeamCheck = v end })
+VisualsTab:Colorpicker({ Title = "Enemy Color", Default = Color3.fromRGB(255, 60, 60), Callback = function(v) ESP.EnemyColor = v end })
+VisualsTab:Colorpicker({ Title = "Team Color", Default = Color3.fromRGB(60, 255, 60), Callback = function(v) ESP.TeamColor = v end })
+
+local CombatTab = PlayerSection:Tab({ Title = "Combat", Icon = "crosshair" })
+CombatTab:Toggle({ Title = "Enable Aimlock", Value = false, Callback = function(v) Aimlock.Enabled = v end })
+CombatTab:Keybind({ Title = "Aim Key", Value = "E", Callback = function(v) Aimlock.Key = Enum.KeyCode[v] end })
+CombatTab:Dropdown({ Title = "Target Part", Values = {"Head", "Torso", "HumanoidRootPart"}, Value = "Head", Callback = function(v) Aimlock.TargetPart = v end })
+CombatTab:Slider({ 
+    Title = "Smoothing", 
+    Desc = "0 = Instant, 10 = Very Smooth", 
+    Value = { Min = 0, Max = 10, Default = 0 }, 
+    Step = 1, 
+    Callback = function(v) Aimlock.Smoothing = v end 
+})
+CombatTab:Toggle({ Title = "Show Target HUD", Desc = "Toggle 3D preview", Value = true, Callback = function(v) Aimlock.UseHUD = v end }) -- HUD TOGGLE
+CombatTab:Toggle({ Title = "Wall Check", Desc = "Ignore walls", Value = false, Callback = function(v) Aimlock.WallCheck = v end })
+CombatTab:Toggle({ Title = "Show FOV", Value = false, Callback = function(v) Aimlock.ShowFOV = v end })
+CombatTab:Slider({ Title = "FOV Radius", Value = { Min = 10, Max = 800, Default = 100 }, Callback = function(v) Aimlock.FOV = v end })
+
+-- Cloud & Settings
+local CloudTab = CloudSection:Tab({ Title = "ScriptBlox", Icon = "cloud-download" })
+local currentScripts = {} 
+local selectedScript = nil
+
+CloudTab:Input({
+    Title = "Search ScriptBlox", Icon = "search",
+    Callback = function(query)
+        if query == "" then return end
+        WindUI:Notify({ Title = "API", Content = "Searching...", Icon = "loader" })
+        task.spawn(function()
+            local results = fetchScriptBlox(query, "search")
+            currentScripts = results
+            local names = {}
+            for _, s in ipairs(results) do table.insert(names, s.title) end
+            _G.ResultsDrop:Refresh(names)
+            WindUI:Notify({ Title = "Success", Content = #results .. " scripts found.", Icon = "check" })
+        end)
+    end
+})
+_G.ResultsDrop = CloudTab:Dropdown({
+    Title = "Select Script", Values = {"Search first..."}, Value = "Search first...",
+    Callback = function(val)
+        for _, s in ipairs(currentScripts) do if s.title == val then selectedScript = s break end end
+        _G.DetailsBtn:Highlight()
+    end
+})
+CloudTab:Space()
+_G.DetailsBtn = CloudTab:Button({
+    Title = "View & Execute", Icon = "expand", Color = Color3.fromHex("#007bff"),
+    Callback = function()
+        if not selectedScript then return end
+        local s = selectedScript
+        local content = string.format("<b>Game:</b> %s\n<b>Views:</b> %s\n<b>Key:</b> %s", s.game and s.game.name or "?", s.views or 0, s.key and "Yes" or "No")
+        WindUI:Popup({ Title = s.title, Content = content, Buttons = {
+            { Title = "Cancel", Variant = "Secondary", Callback = function() end },
+            { Title = "Execute", Variant = "Primary", Callback = function() if s.key then setclipboard(s.keyLink) end safeLoad(s.script, true) end }
+        }})
     end
 })
 
--- ---------- Close Event ----------
-Window:OnClose(function()
-    -- Do NOT automatically stop the HUD when the WindUI window is closed/toggled
-    -- This keeps the FPS/Ping HUD visible even if the main UI is hidden with the toggle key.
-    print("ro-archive closed.")
-end)
+local SettingsTab = SettingsSection:Tab({ Title = "Interface", Icon = "settings" })
+local themeNames = {}
+for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
+SettingsTab:Dropdown({ Title = "Theme", Values = themeNames, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end })
+SettingsTab:Keybind({ Title = "Menu Toggle", Value = "H", Callback = function(key) Window:SetToggleKey(Enum.KeyCode[key]) end })
+
+WindUI:Notify({ Title = "ro-archive loaded", Content = "All systems operational.", Duration = 4 })
