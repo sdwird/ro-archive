@@ -1,7 +1,7 @@
 --[[
-    ro-archive (v4 Final Edition)
+    ro-archive (v6 Community Edition)
     English Only | WindUI | ScriptBlox
-    Features: Config System, Optimized ESP, Interaction Tab, Safe Unload
+    Features: 5-Star Rating, Feedback Types, Config System, Optimized ESP
 ]]
 
 local WindUI
@@ -27,6 +27,9 @@ local Workspace = game:GetService("Workspace")
 local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
+-- // WEBHOOK CONFIG // --
+local WebhookURL = "https://discord.com/api/webhooks/1445877108177109143/TKV63RC2goiGOcTlPSXEk2pQWjMLFzu4C6au885WKsBuz12u8J24KPGPyD0E3UcfJzIk"
+
 -- // 1. Utility Functions // --
 
 local function safeLoad(url_or_code, isRawCode)
@@ -42,6 +45,39 @@ end
 local function makeRequest(options)
     local r = request or http_request or (syn and syn.request) or (fluxus and fluxus.request)
     if r then return r(options) else return { Body = game:HttpGet(options.Url) } end
+end
+
+-- Updated Webhook Function with Rating & Type
+local function sendWebhook(msg, rating, ftype)
+    local req = request or http_request or (syn and syn.request) or (fluxus and fluxus.request)
+    if req then
+        -- Color logic based on rating
+        local color = 16711680 -- Red (Low)
+        if rating == "⭐⭐⭐⭐⭐" or rating == "⭐⭐⭐⭐" then color = 65280 end -- Green (High)
+        if rating == "⭐⭐⭐" then color = 16776960 end -- Yellow (Mid)
+
+        req({
+            Url = WebhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode({
+                content = "",
+                embeds = {{
+                    title = "New " .. ftype, -- "New Bug Report" etc.
+                    description = "**Message:**\n" .. (msg ~= "" and msg or "No message provided."),
+                    color = color,
+                    fields = {
+                        { name = "Rating", value = rating, inline = true },
+                        { name = "Type", value = ftype, inline = true },
+                        { name = "User", value = LocalPlayer.Name .. " ("..LocalPlayer.UserId..")", inline = false },
+                        { name = "Game ID", value = tostring(game.GameId), inline = true }
+                    },
+                    footer = { text = "ro-archive v6 System" },
+                    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                }}
+            })
+        })
+    end
 end
 
 local function fetchScriptBlox(query, mode)
@@ -64,9 +100,9 @@ local PlayerLoop = RunService.RenderStepped:Connect(function()
         if PlayerConfig.LoopJump then hum.UseJumpPower = true; hum.JumpPower = PlayerConfig.Jump end
     end
 end)
-table.insert(Connections, PlayerLoop) -- Add to connections
+table.insert(Connections, PlayerLoop) 
 
--- // 3. Ultimate ESP System (Optimized) // --
+-- // 3. Ultimate ESP System // --
 local ESP = {
     Enabled = false,
     Boxes = false, Names = false, Health = false, Tracers = false, Skeleton = false, Chams = false, 
@@ -122,7 +158,6 @@ local function UpdateESP()
                 if ESP.TeamCheck and plr.Team == LocalPlayer.Team then isEnemy = false end
                 local color = isEnemy and ESP.EnemyColor or ESP.TeamColor
 
-                -- GLOW
                 if ESP.Chams then
                     if not ESP.Highlights[plr] then
                         local hl = Instance.new("Highlight")
@@ -140,7 +175,6 @@ local function UpdateESP()
                     if ESP.Highlights[plr] then ESP.Highlights[plr].Enabled = false end
                 end
 
-                -- DRAWINGS
                 if not ESP.Drawings[plr] then
                     ESP.Drawings[plr] = {
                         Box = CreateDrawing("Square", {Thickness = 1.5, Filled = false, Transparency = 1}),
@@ -225,7 +259,7 @@ local function UpdateESP()
     end
 end
 local EspLoop = RunService.RenderStepped:Connect(UpdateESP)
-table.insert(Connections, EspLoop) -- Add to connections
+table.insert(Connections, EspLoop)
 Players.PlayerRemoving:Connect(ClearESP)
 
 -- // 4. Target HUD System // --
@@ -340,13 +374,13 @@ local AimLoop = RunService.RenderStepped:Connect(function()
         else Aimlock.LockedTarget = nil; UpdateTargetHUD(nil) end
     else UpdateTargetHUD(nil) end
 end)
-table.insert(Connections, AimLoop) -- Add to connections
+table.insert(Connections, AimLoop)
 
 -- // 6. UI // --
 local Window = WindUI:CreateWindow({
-    Title = "ro-archive  |  v4 Final Edition",
+    Title = "ro-archive  |  v6 Community",
     Author = "sdwird",
-    Folder = "ro-archive-v4",
+    Folder = "ro-archive-v6",
     Icon = "archive", 
     IconSize = 20,
     NewElements = true,
@@ -365,7 +399,7 @@ local SettingsSection = Window:Section({ Title = "Settings" })
 local HomeTab = MainSection:Tab({ Title = "Home", Icon = "house" })
 HomeTab:Paragraph({
     Title = "Welcome, " .. LocalPlayer.Name,
-    Desc = "ro-archive v4 final edition running on v" .. WindUI.Version .. ".\nBuild Status: Release\nGame ID: " .. game.GameId,
+    Desc = "ro-archive v6 Community Edition.\nBuild Status: Release\nGame ID: " .. game.GameId,
     Image = "rbxassetid://129260712070622", 
     ImageSize = 64,
     Buttons = {
@@ -378,7 +412,6 @@ HomeTab:Paragraph({
             Title = "Unload Script",
             Icon = "trash",
             Callback = function() 
-                -- SAFE UNLOAD LOGIC --
                 for _, conn in pairs(Connections) do conn:Disconnect() end
                 for _, plr in pairs(Players:GetPlayers()) do ClearESP(plr) end
                 UpdateTargetHUD(nil)
@@ -388,6 +421,53 @@ HomeTab:Paragraph({
             end
         }
     }
+})
+
+-- ADVANCED FEEDBACK SYSTEM --
+local FeedbackTab = MainSection:Tab({ Title = "Feedback", Icon = "message-square" })
+local FeedbackMsg = ""
+local FeedbackType = "Bug Report"
+local StarRating = "⭐⭐⭐⭐⭐"
+
+FeedbackTab:Section({ Title = "Rate & Report" })
+
+FeedbackTab:Dropdown({
+    Title = "Feedback Type",
+    Values = {"Bug Report", "Suggestion", "Feature Request", "Just Rating"},
+    Value = "Bug Report",
+    Callback = function(v) FeedbackType = v end
+})
+
+FeedbackTab:Dropdown({
+    Title = "Rate Us",
+    Values = {"⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐", "⭐⭐", "⭐"},
+    Value = "⭐⭐⭐⭐⭐",
+    Callback = function(v) StarRating = v end
+})
+
+FeedbackTab:Input({
+    Title = "Message",
+    Placeholder = "Describe your issue or idea...",
+    Callback = function(v) FeedbackMsg = v end
+})
+
+FeedbackTab:Button({
+    Title = "Send Feedback",
+    Icon = "send",
+    Callback = function()
+        WindUI:Notify({ Title = "Sending...", Content = "Please wait.", Icon = "loader" })
+        
+        -- Sending logic
+        if FeedbackType == "Just Rating" then
+             sendWebhook("User just submitted a rating.", StarRating, FeedbackType)
+             WindUI:Notify({ Title = "Thanks!", Content = "We appreciate your rating.", Icon = "star" })
+        elseif FeedbackMsg ~= "" then
+             sendWebhook(FeedbackMsg, StarRating, FeedbackType)
+             WindUI:Notify({ Title = "Sent!", Content = "Thank you for your feedback.", Icon = "check" })
+        else
+             WindUI:Notify({ Title = "Error", Content = "Message cannot be empty for reports.", Icon = "alert-circle" })
+        end
+    end
 })
 
 -- Hubs Tab
@@ -414,7 +494,7 @@ MoveTab:Toggle({ Flag = "LoopSpeed", Title = "Loop Speed", Value = false, Callba
 MoveTab:Slider({ Flag = "JumpPower", Title = "Jump Power", Value = { Min = 50, Max = 300, Default = 50 }, Callback = function(v) PlayerConfig.Jump = v end })
 MoveTab:Toggle({ Flag = "LoopJump", Title = "Loop Jump", Value = false, Callback = function(v) PlayerConfig.LoopJump = v end })
 
--- [ PLAYER INTERACTION (NEW) ] --
+-- [ PLAYER INTERACTION ] --
 local InteractTab = PlayerSection:Tab({ Title = "Interaction", Icon = "users" })
 local SelectedPlayer = nil
 local PlayerDrop = InteractTab:Dropdown({
@@ -548,4 +628,4 @@ for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
 SettingsTab:Dropdown({ Title = "Theme", Values = themeNames, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end })
 SettingsTab:Keybind({ Title = "Menu Toggle", Value = "H", Callback = function(key) Window:SetToggleKey(Enum.KeyCode[key]) end })
 
-WindUI:Notify({ Title = "ro-archive v4", Content = "Final Edition Loaded.", Duration = 4 })
+WindUI:Notify({ Title = "ro-archive v6", Content = "Community Edition Loaded.", Duration = 4 })
