@@ -1,7 +1,7 @@
 --[[
-    ro-archive (Fixed Edition)
+    ro-archive (v4 Final Edition)
     English Only | WindUI | ScriptBlox
-    Features: Glow ESP, Fixed Aimlock Smoothing, Target HUD Toggle, All Scripts Restored
+    Features: Config System, Optimized ESP, Interaction Tab, Safe Unload
 ]]
 
 local WindUI
@@ -15,6 +15,9 @@ do
         WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
     end
 end
+
+-- // Global Connections Table (For Safe Unload) // --
+local Connections = {} 
 
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
@@ -53,7 +56,7 @@ end
 
 -- // 2. Player Logic // --
 local PlayerConfig = { Speed = 16, Jump = 50, LoopSpeed = false, LoopJump = false }
-RunService.RenderStepped:Connect(function()
+local PlayerLoop = RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChild("Humanoid")
     if hum then
@@ -61,21 +64,18 @@ RunService.RenderStepped:Connect(function()
         if PlayerConfig.LoopJump then hum.UseJumpPower = true; hum.JumpPower = PlayerConfig.Jump end
     end
 end)
+table.insert(Connections, PlayerLoop) -- Add to connections
 
--- // 3. Ultimate ESP System // --
+-- // 3. Ultimate ESP System (Optimized) // --
 local ESP = {
     Enabled = false,
-    Boxes = false,
-    Names = false,
-    Health = false,
-    Tracers = false,
-    Skeleton = false,
-    Chams = false, 
+    Boxes = false, Names = false, Health = false, Tracers = false, Skeleton = false, Chams = false, 
     TeamCheck = false,
     EnemyColor = Color3.fromRGB(255, 60, 60),
     TeamColor = Color3.fromRGB(60, 255, 60),
     Drawings = {},
-    Highlights = {}
+    Highlights = {},
+    RigCache = {}
 }
 
 local function CreateDrawing(type, props)
@@ -96,9 +96,9 @@ local function ClearESP(plr)
         ESP.Highlights[plr]:Destroy()
         ESP.Highlights[plr] = nil
     end
+    ESP.RigCache[plr] = nil
 end
 
--- Bone Connections
 local SkeletonConnections = {
     {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"}, {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
     {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}, {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"},
@@ -189,14 +189,14 @@ local function UpdateESP()
                     else objs.Tracer.Visible = false end
                     
                     if ESP.Skeleton then
-                        local rigType = (char:FindFirstChild("UpperTorso")) and "R15" or "R6"
-                        local conns = (rigType == "R15") and SkeletonConnections or SkeletonConnectionsR6
+                        if not ESP.RigCache[plr] then
+                            ESP.RigCache[plr] = (char:FindFirstChild("UpperTorso")) and "R15" or "R6"
+                        end
+                        local conns = (ESP.RigCache[plr] == "R15") and SkeletonConnections or SkeletonConnectionsR6
                         
                         if #objs.SkeletonLines < #conns then
                             for i = 1, #conns do
-                                if not objs.SkeletonLines[i] then
-                                    objs.SkeletonLines[i] = CreateDrawing("Line", {Thickness = 1.5, Transparency = 1})
-                                end
+                                if not objs.SkeletonLines[i] then objs.SkeletonLines[i] = CreateDrawing("Line", {Thickness = 1.5, Transparency = 1}) end
                             end
                         end
 
@@ -204,15 +204,11 @@ local function UpdateESP()
                             local p1 = char:FindFirstChild(connection[1])
                             local p2 = char:FindFirstChild(connection[2])
                             local line = objs.SkeletonLines[i]
-
                             if p1 and p2 and line then
                                 local v1, s1 = Camera:WorldToViewportPoint(p1.Position)
                                 local v2, s2 = Camera:WorldToViewportPoint(p2.Position)
-
                                 if s1 and s2 then
-                                    line.Visible = true; line.Color = color
-                                    line.From = Vector2.new(v1.X, v1.Y)
-                                    line.To = Vector2.new(v2.X, v2.Y)
+                                    line.Visible = true; line.Color = color; line.From = Vector2.new(v1.X, v1.Y); line.To = Vector2.new(v2.X, v2.Y)
                                 else line.Visible = false end
                             elseif line then line.Visible = false end
                         end
@@ -228,177 +224,63 @@ local function UpdateESP()
         else ClearESP(plr) end
     end
 end
-RunService.RenderStepped:Connect(UpdateESP)
+local EspLoop = RunService.RenderStepped:Connect(UpdateESP)
+table.insert(Connections, EspLoop) -- Add to connections
 Players.PlayerRemoving:Connect(ClearESP)
 
 -- // 4. Target HUD System // --
-local TargetHUD = {
-    Gui = nil,
-    Container = nil,
-    Viewport = nil,
-    NameLabel = nil,
-    ToolLabel = nil,
-    HealthBar = nil,
-    HealthText = nil,
-    CurrentTarget = nil
-}
+local TargetHUD = { Gui = nil, Container = nil, Viewport = nil, NameLabel = nil, ToolLabel = nil, HealthBar = nil, HealthText = nil, CurrentTarget = nil }
 
 local function CreateTargetHUD()
     if TargetHUD.Gui then TargetHUD.Gui:Destroy() end
-    
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "roArchiveTargetHUD"
-    gui.Parent = game:GetService("CoreGui")
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.fromOffset(260, 90)
-    frame.Position = UDim2.new(0.5, 40, 0.5, -45)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    frame.BorderSizePixel = 0
-    frame.BackgroundTransparency = 0.1
-    frame.Visible = false
-    frame.Parent = gui
-    
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 8); corner.Parent = frame
-    local stroke = Instance.new("UIStroke"); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(0, 255, 135); stroke.Parent = frame
+    local gui = Instance.new("ScreenGui"); gui.Name = "roArchiveTargetHUD"; gui.Parent = game:GetService("CoreGui")
+    local frame = Instance.new("Frame"); frame.Size = UDim2.fromOffset(260, 90); frame.Position = UDim2.new(0.5, 40, 0.5, -45); frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); frame.BorderSizePixel = 0; frame.BackgroundTransparency = 0.1; frame.Visible = false; frame.Parent = gui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8); local stroke = Instance.new("UIStroke", frame); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(0, 255, 135)
+    local view = Instance.new("ViewportFrame", frame); view.Size = UDim2.fromOffset(80, 80); view.Position = UDim2.fromOffset(5, 5); view.BackgroundColor3 = Color3.fromRGB(30, 30, 30); view.BackgroundTransparency = 0.5; Instance.new("UICorner", view).CornerRadius = UDim.new(0, 6)
+    local nameLbl = Instance.new("TextLabel", frame); nameLbl.Size = UDim2.new(1, -95, 0, 25); nameLbl.Position = UDim2.fromOffset(90, 5); nameLbl.BackgroundTransparency = 1; nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255); nameLbl.Font = Enum.Font.GothamBold; nameLbl.TextSize = 16; nameLbl.TextXAlignment = Enum.TextXAlignment.Left; nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+    local toolLbl = Instance.new("TextLabel", frame); toolLbl.Size = UDim2.new(1, -95, 0, 20); toolLbl.Position = UDim2.fromOffset(90, 30); toolLbl.BackgroundTransparency = 1; toolLbl.TextColor3 = Color3.fromRGB(200, 200, 200); toolLbl.Font = Enum.Font.Gotham; toolLbl.TextSize = 13; toolLbl.TextXAlignment = Enum.TextXAlignment.Left
+    local hpBg = Instance.new("Frame", frame); hpBg.Size = UDim2.new(1, -100, 0, 6); hpBg.Position = UDim2.fromOffset(90, 65); hpBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40); hpBg.BorderSizePixel = 0; Instance.new("UICorner", hpBg)
+    local hpFill = Instance.new("Frame", hpBg); hpFill.Size = UDim2.fromScale(1, 1); hpFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100); hpFill.BorderSizePixel = 0; Instance.new("UICorner", hpFill)
+    local hpText = Instance.new("TextLabel", frame); hpText.Size = UDim2.new(1, -100, 0, 15); hpText.Position = UDim2.fromOffset(90, 72); hpText.BackgroundTransparency = 1; hpText.TextColor3 = Color3.fromRGB(150, 150, 150); hpText.Font = Enum.Font.GothamBold; hpText.TextSize = 11; hpText.TextXAlignment = Enum.TextXAlignment.Left
 
-    local view = Instance.new("ViewportFrame")
-    view.Size = UDim2.fromOffset(80, 80)
-    view.Position = UDim2.fromOffset(5, 5)
-    view.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    view.BorderSizePixel = 0
-    view.BackgroundTransparency = 0.5
-    view.Parent = frame
-    local vCorner = Instance.new("UICorner"); vCorner.CornerRadius = UDim.new(0, 6); vCorner.Parent = view
-
-    local nameLbl = Instance.new("TextLabel")
-    nameLbl.Size = UDim2.new(1, -95, 0, 25)
-    nameLbl.Position = UDim2.fromOffset(90, 5)
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLbl.Font = Enum.Font.GothamBold
-    nameLbl.TextSize = 16
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-    nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
-    nameLbl.Text = "Target Name"
-    nameLbl.Parent = frame
-
-    local toolLbl = Instance.new("TextLabel")
-    toolLbl.Size = UDim2.new(1, -95, 0, 20)
-    toolLbl.Position = UDim2.fromOffset(90, 30)
-    toolLbl.BackgroundTransparency = 1
-    toolLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-    toolLbl.Font = Enum.Font.Gotham
-    toolLbl.TextSize = 13
-    toolLbl.TextXAlignment = Enum.TextXAlignment.Left
-    toolLbl.Text = "Holding: None"
-    toolLbl.Parent = frame
-
-    local hpBg = Instance.new("Frame")
-    hpBg.Size = UDim2.new(1, -100, 0, 6)
-    hpBg.Position = UDim2.fromOffset(90, 65)
-    hpBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    hpBg.BorderSizePixel = 0
-    hpBg.Parent = frame
-    local hpCorner = Instance.new("UICorner"); hpCorner.Parent = hpBg
-    
-    local hpFill = Instance.new("Frame")
-    hpFill.Size = UDim2.fromScale(1, 1)
-    hpFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
-    hpFill.BorderSizePixel = 0
-    hpFill.Parent = hpBg
-    local fillCorner = Instance.new("UICorner"); fillCorner.Parent = hpFill
-    
-    local hpText = Instance.new("TextLabel")
-    hpText.Size = UDim2.new(1, -100, 0, 15)
-    hpText.Position = UDim2.fromOffset(90, 72)
-    hpText.BackgroundTransparency = 1
-    hpText.TextColor3 = Color3.fromRGB(150, 150, 150)
-    hpText.Font = Enum.Font.GothamBold
-    hpText.TextSize = 11
-    hpText.TextXAlignment = Enum.TextXAlignment.Left
-    hpText.Text = "100/100 HP"
-    hpText.Parent = frame
-
-    TargetHUD.Gui = gui
-    TargetHUD.Container = frame
-    TargetHUD.Viewport = view
-    TargetHUD.NameLabel = nameLbl
-    TargetHUD.ToolLabel = toolLbl
-    TargetHUD.HealthBar = hpFill
-    TargetHUD.HealthText = hpText
+    TargetHUD.Gui = gui; TargetHUD.Container = frame; TargetHUD.Viewport = view; TargetHUD.NameLabel = nameLbl; TargetHUD.ToolLabel = toolLbl; TargetHUD.HealthBar = hpFill; TargetHUD.HealthText = hpText
 end
 
 local function UpdateTargetHUD(target)
     if not TargetHUD.Gui then CreateTargetHUD() end
-    
-    if not target or not target.Character then
-        TargetHUD.Container.Visible = false
-        TargetHUD.CurrentTarget = nil
-        return
-    end
+    if not target or not target.Character then TargetHUD.Container.Visible = false; TargetHUD.CurrentTarget = nil; return end
 
     TargetHUD.Container.Visible = true
     TargetHUD.NameLabel.Text = target.Name
-
     local hum = target.Character:FindFirstChild("Humanoid")
     if hum then
-        local hp = math.floor(hum.Health)
-        local maxHp = math.floor(hum.MaxHealth)
+        local hp = math.floor(hum.Health); local maxHp = math.floor(hum.MaxHealth)
         TargetHUD.HealthBar.Size = UDim2.fromScale(math.clamp(hp/maxHp, 0, 1), 1)
         TargetHUD.HealthBar.BackgroundColor3 = Color3.fromHSV((hp/maxHp)*0.3, 1, 1)
         TargetHUD.HealthText.Text = hp .. " / " .. maxHp .. " HP"
     end
-
     local tool = target.Character:FindFirstChildOfClass("Tool")
-    if tool then
-        TargetHUD.ToolLabel.Text = "Holding: " .. tool.Name
-        TargetHUD.ToolLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    else
-        TargetHUD.ToolLabel.Text = "Holding: None"
-        TargetHUD.ToolLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
+    TargetHUD.ToolLabel.Text = tool and ("Holding: " .. tool.Name) or "Holding: None"
 
     if TargetHUD.CurrentTarget ~= target then
         TargetHUD.CurrentTarget = target
         TargetHUD.Viewport:ClearAllChildren()
-        
-        local worldModel = Instance.new("WorldModel")
-        worldModel.Parent = TargetHUD.Viewport
-        local cam = Instance.new("Camera")
-        cam.Parent = TargetHUD.Viewport
-        TargetHUD.Viewport.CurrentCamera = cam
-        
+        local worldModel = Instance.new("WorldModel"); worldModel.Parent = TargetHUD.Viewport
+        local cam = Instance.new("Camera"); cam.Parent = TargetHUD.Viewport; TargetHUD.Viewport.CurrentCamera = cam
         target.Character.Archivable = true
-        local clone = target.Character:Clone()
-        clone.Parent = worldModel
-        
+        local clone = target.Character:Clone(); clone.Parent = worldModel
         local root = clone:FindFirstChild("HumanoidRootPart") or clone:FindFirstChild("Torso") or clone:FindFirstChild("Head")
-        if root then
-            cam.CFrame = CFrame.new(root.Position + (root.CFrame.LookVector * 5) + Vector3.new(0, 2, 0), root.Position)
-        end
-        
-        for _, v in pairs(clone:GetDescendants()) do
-            if v:IsA("Script") or v:IsA("LocalScript") then v:Destroy() end
-        end
+        if root then cam.CFrame = CFrame.new(root.Position + (root.CFrame.LookVector * 5) + Vector3.new(0, 2, 0), root.Position) end
+        for _, v in pairs(clone:GetDescendants()) do if v:IsA("Script") or v:IsA("LocalScript") then v:Destroy() end end
     end
 end
-
 CreateTargetHUD()
 
--- // 5. Aimlock System (Fixed Smoothing) // --
+-- // 5. Aimlock System // --
 local Aimlock = {
-    Enabled = false,
-    Key = Enum.KeyCode.E,
-    IsHolding = false,
-    LockedTarget = nil,
-    FOV = 100,
-    ShowFOV = false,
-    Smoothing = 0, 
-    TargetPart = "Head",
-    TeamCheck = false,
-    WallCheck = false,
-    UseHUD = true -- Default enabled
+    Enabled = false, Key = Enum.KeyCode.E, IsHolding = false, LockedTarget = nil,
+    FOV = 100, ShowFOV = false, Smoothing = 0, TargetPart = "Head",
+    TeamCheck = false, WallCheck = false, UseHUD = true
 }
 
 local FOVCircle = Drawing.new("Circle")
@@ -423,20 +305,15 @@ local function GetBestTarget()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             if Aimlock.TeamCheck and plr.Team == LocalPlayer.Team then continue end
-            
             local char = plr.Character
             local hum = char and char:FindFirstChild("Humanoid")
             local part = char and char:FindFirstChild(Aimlock.TargetPart)
-
             if char and hum and hum.Health > 0 and part then
                 local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
                 if onScreen then
                     local dist = (mousePos - Vector2.new(pos.X, pos.Y)).Magnitude
                     if dist < shortestDist then
-                        if IsVisible(part) then
-                            closest = plr
-                            shortestDist = dist
-                        end
+                        if IsVisible(part) then closest = plr; shortestDist = dist end
                     end
                 end
             end
@@ -445,65 +322,31 @@ local function GetBestTarget()
     return closest
 end
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Aimlock.Key and Aimlock.Enabled then 
-        Aimlock.IsHolding = true 
-        Aimlock.LockedTarget = GetBestTarget()
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Aimlock.Key then 
-        Aimlock.IsHolding = false; 
-        Aimlock.LockedTarget = nil
-        UpdateTargetHUD(nil) 
-    end
-end)
+UserInputService.InputBegan:Connect(function(input) if input.KeyCode == Aimlock.Key and Aimlock.Enabled then Aimlock.IsHolding = true; Aimlock.LockedTarget = GetBestTarget() end end)
+UserInputService.InputEnded:Connect(function(input) if input.KeyCode == Aimlock.Key then Aimlock.IsHolding = false; Aimlock.LockedTarget = nil; UpdateTargetHUD(nil) end end)
 
-RunService.RenderStepped:Connect(function()
+local AimLoop = RunService.RenderStepped:Connect(function()
     FOVCircle.Visible = Aimlock.Enabled and Aimlock.ShowFOV
     FOVCircle.Radius = Aimlock.FOV
     FOVCircle.Position = UserInputService:GetMouseLocation()
-
     if Aimlock.Enabled and Aimlock.IsHolding and Aimlock.LockedTarget then
         local target = Aimlock.LockedTarget
         local char = target.Character
         local part = char and char:FindFirstChild(Aimlock.TargetPart)
-        local hum = char and char:FindFirstChild("Humanoid")
-
-        if char and part and hum and hum.Health > 0 then
-            
-            -- Handle HUD based on toggle
+        if char and part then
             if Aimlock.UseHUD then UpdateTargetHUD(target) else UpdateTargetHUD(nil) end
-
-            if Aimlock.WallCheck and not IsVisible(part) then 
-                Aimlock.LockedTarget = nil 
-                UpdateTargetHUD(nil)
-                return 
-            end
-
-            local currentCFrame = Camera.CFrame
-            local targetCFrame = CFrame.new(currentCFrame.Position, part.Position)
-            
-            -- FIXED SMOOTHING LOGIC
-            -- If smoothing is 0: Alpha = 1 (Instant)
-            -- If smoothing is 10: Alpha = ~0.09 (Slow)
-            local alpha = 1 / (Aimlock.Smoothing + 1)
-            
-            Camera.CFrame = currentCFrame:Lerp(targetCFrame, alpha)
-        else
-            Aimlock.LockedTarget = nil
-            UpdateTargetHUD(nil)
-        end
-    else
-        UpdateTargetHUD(nil)
-    end
+            if Aimlock.WallCheck and not IsVisible(part) then Aimlock.LockedTarget = nil; UpdateTargetHUD(nil); return end
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, part.Position), 1 / (Aimlock.Smoothing + 1))
+        else Aimlock.LockedTarget = nil; UpdateTargetHUD(nil) end
+    else UpdateTargetHUD(nil) end
 end)
+table.insert(Connections, AimLoop) -- Add to connections
 
 -- // 6. UI // --
 local Window = WindUI:CreateWindow({
-    Title = "ro-archive  |  Fixed Edition",
+    Title = "ro-archive  |  v4 Final Edition",
     Author = "sdwird",
-    Folder = "ro-archive-fix",
+    Folder = "ro-archive-v4",
     Icon = "archive", 
     IconSize = 20,
     NewElements = true,
@@ -515,74 +358,138 @@ local Window = WindUI:CreateWindow({
 local MainSection = Window:Section({ Title = "Dashboard" })
 local PlayerSection = Window:Section({ Title = "Player & Combat" })
 local CloudSection = Window:Section({ Title = "Cloud" })
+local ConfigSection = Window:Section({ Title = "Profiles" })
 local SettingsSection = Window:Section({ Title = "Settings" })
 
 -- Dashboard
 local HomeTab = MainSection:Tab({ Title = "Home", Icon = "house" })
-HomeTab:Paragraph({ Title = "ro-archive", Desc = "Script Hub & Tools", Image = "rbxassetid://129260712070622", ImageSize = 48 })
-HomeTab:Button({ Title = "Close Interface", Icon = "eye-off", Color = Color3.fromHex("#ff4830"), Callback = function() Window:Toggle() end })
-Window:Tag({ Title = "v" .. WindUI.Version, Icon = "github", Color = Color3.fromHex("#6b31ff") })
+HomeTab:Paragraph({
+    Title = "Welcome, " .. LocalPlayer.Name,
+    Desc = "ro-archive v4 final edition running on v" .. WindUI.Version .. ".\nBuild Status: Release\nGame ID: " .. game.GameId,
+    Image = "rbxassetid://129260712070622", 
+    ImageSize = 64,
+    Buttons = {
+        {
+            Title = "Copy Discord",
+            Icon = "link",
+            Callback = function() setclipboard("https://discord.gg/yourserver") end
+        },
+        {
+            Title = "Unload Script",
+            Icon = "trash",
+            Callback = function() 
+                -- SAFE UNLOAD LOGIC --
+                for _, conn in pairs(Connections) do conn:Disconnect() end
+                for _, plr in pairs(Players:GetPlayers()) do ClearESP(plr) end
+                UpdateTargetHUD(nil)
+                FOVCircle:Remove()
+                if TargetHUD.Gui then TargetHUD.Gui:Destroy() end
+                Window:Destroy()
+            end
+        }
+    }
+})
 
--- Local Scripts
-local LocalTab = MainSection:Tab({ Title = "Local Scripts", Icon = "file-code" })
-local function addLocalScript(title, desc, icon, url, afterInfo)
-    LocalTab:Button({ Title = title, Desc = desc, Icon = icon, Callback = function() if afterInfo then pcall(afterInfo) end safeLoad(url, false) end })
-end
-addLocalScript("Zenware Crim Aimlock", "Key: NewSigmaSigmaBoy", "target", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/zenware-criminality.lua", function() setclipboard("NewSigmaSigmaBoy") end)
-addLocalScript("Demonology ESP", "Visuals only", "eye", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/demonology-esp.lua") -- RESTORED
-addLocalScript("Build A Boat", "Auto farm & tools", "anchor", "https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/babft-asu.lua")
-
--- Hubs
-local HubsTab = MainSection:Tab({ Title = "Hubs", Icon = "globe" })
-HubsTab:Section({ Title = "Universal" })
+-- Hubs Tab
+local HubsTab = MainSection:Tab({ Title = "Universal Hubs", Icon = "globe" })
+HubsTab:Section({ Title = "Hubs" })
 HubsTab:Button({ Title = "Infinite Yield", Icon = "terminal", Callback = function() safeLoad("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", false) end })
+HubsTab:Button({ Title = "Orca Hub", Icon = "fish", Callback = function() safeLoad("https://raw.githubusercontent.com/richie0866/orca/master/public/latest.lua", false) end })
+HubsTab:Button({ Title = "Nameless Admin", Icon = "shield-check", Callback = function() safeLoad("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source", false) end })
+HubsTab:Button({ Title = "Sirius", Icon = "star", Callback = function() safeLoad("https://sirius.menu/sirius", false) end })
 
-HubsTab:Section({ Title = "Solara Hubs" }) -- RESTORED
+HubsTab:Section({ Title = "Solara Specific" })
 HubsTab:Button({ Title = "Skibidi Solara (Orion)", Icon = "zap", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidi-solara-hub.lua", false) end })
 HubsTab:Button({ Title = "Skibidi Solara (Auto)", Icon = "radar", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/skibidihub-rayfield", false) end })
 HubsTab:Button({ Title = "Solara Hub (Normal)", Icon = "folder-open", Callback = function() safeLoad("https://raw.githubusercontent.com/sdwird/ro-archive/refs/heads/main/solara-hub.lua", false) end })
 
--- [ PLAYER FUNCTIONS ] --
+HubsTab:Section({ Title = "Tools" })
+HubsTab:Button({ Title = "Dex Explorer", Icon = "search-code", Callback = function() safeLoad("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", false) end })
+HubsTab:Button({ Title = "Turtle Spy", Icon = "bug", Callback = function() safeLoad("https://raw.githubusercontent.com/Turtle-Brand/Turtle-Spy/main/source.lua", false) end })
+
+-- [ PLAYER MOVEMENT ] --
 local MoveTab = PlayerSection:Tab({ Title = "Movement", Icon = "footprints" })
-MoveTab:Slider({ Title = "Walk Speed", Value = { Min = 16, Max = 300, Default = 16 }, Callback = function(v) PlayerConfig.Speed = v; if not PlayerConfig.LoopSpeed then LocalPlayer.Character.Humanoid.WalkSpeed = v end end })
-MoveTab:Toggle({ Title = "Loop Speed", Value = false, Callback = function(v) PlayerConfig.LoopSpeed = v end })
-MoveTab:Slider({ Title = "Jump Power", Value = { Min = 50, Max = 300, Default = 50 }, Callback = function(v) PlayerConfig.Jump = v; if not PlayerConfig.LoopJump then LocalPlayer.Character.Humanoid.JumpPower = v end end })
-MoveTab:Toggle({ Title = "Loop Jump", Value = false, Callback = function(v) PlayerConfig.LoopJump = v end })
+MoveTab:Slider({ Flag = "WalkSpeed", Title = "Walk Speed", Value = { Min = 16, Max = 300, Default = 16 }, Callback = function(v) PlayerConfig.Speed = v end })
+MoveTab:Toggle({ Flag = "LoopSpeed", Title = "Loop Speed", Value = false, Callback = function(v) PlayerConfig.LoopSpeed = v end })
+MoveTab:Slider({ Flag = "JumpPower", Title = "Jump Power", Value = { Min = 50, Max = 300, Default = 50 }, Callback = function(v) PlayerConfig.Jump = v end })
+MoveTab:Toggle({ Flag = "LoopJump", Title = "Loop Jump", Value = false, Callback = function(v) PlayerConfig.LoopJump = v end })
 
-local VisualsTab = PlayerSection:Tab({ Title = "Visuals", Icon = "eye" })
-VisualsTab:Toggle({ Title = "Enable ESP", Value = false, Callback = function(v) ESP.Enabled = v end })
-VisualsTab:Section({ Title = "Features" })
-VisualsTab:Toggle({ Title = "Glowing Chams", Value = false, Callback = function(v) ESP.Chams = v end })
-VisualsTab:Toggle({ Title = "Skeleton", Value = false, Callback = function(v) ESP.Skeleton = v end })
-VisualsTab:Toggle({ Title = "2D Boxes", Value = false, Callback = function(v) ESP.Boxes = v end })
-VisualsTab:Toggle({ Title = "Names & Distance", Value = false, Callback = function(v) ESP.Names = v end })
-VisualsTab:Toggle({ Title = "Health Bar", Value = false, Callback = function(v) ESP.Health = v end })
-VisualsTab:Toggle({ Title = "Tracers", Value = false, Callback = function(v) ESP.Tracers = v end })
-VisualsTab:Section({ Title = "Settings" })
-VisualsTab:Toggle({ Title = "Team Check", Value = false, Callback = function(v) ESP.TeamCheck = v end })
-VisualsTab:Colorpicker({ Title = "Enemy Color", Default = Color3.fromRGB(255, 60, 60), Callback = function(v) ESP.EnemyColor = v end })
-VisualsTab:Colorpicker({ Title = "Team Color", Default = Color3.fromRGB(60, 255, 60), Callback = function(v) ESP.TeamColor = v end })
-
-local CombatTab = PlayerSection:Tab({ Title = "Combat", Icon = "crosshair" })
-CombatTab:Toggle({ Title = "Enable Aimlock", Value = false, Callback = function(v) Aimlock.Enabled = v end })
-CombatTab:Keybind({ Title = "Aim Key", Value = "E", Callback = function(v) Aimlock.Key = Enum.KeyCode[v] end })
-CombatTab:Dropdown({ Title = "Target Part", Values = {"Head", "Torso", "HumanoidRootPart"}, Value = "Head", Callback = function(v) Aimlock.TargetPart = v end })
-CombatTab:Slider({ 
-    Title = "Smoothing", 
-    Desc = "0 = Instant, 10 = Very Smooth", 
-    Value = { Min = 0, Max = 10, Default = 0 }, 
-    Step = 1, 
-    Callback = function(v) Aimlock.Smoothing = v end 
+-- [ PLAYER INTERACTION (NEW) ] --
+local InteractTab = PlayerSection:Tab({ Title = "Interaction", Icon = "users" })
+local SelectedPlayer = nil
+local PlayerDrop = InteractTab:Dropdown({
+    Title = "Select Player",
+    Values = {},
+    Callback = function(v) SelectedPlayer = Players:FindFirstChild(v) end
 })
-CombatTab:Toggle({ Title = "Show Target HUD", Desc = "Toggle 3D preview", Value = true, Callback = function(v) Aimlock.UseHUD = v end }) -- HUD TOGGLE
-CombatTab:Toggle({ Title = "Wall Check", Desc = "Ignore walls", Value = false, Callback = function(v) Aimlock.WallCheck = v end })
-CombatTab:Toggle({ Title = "Show FOV", Value = false, Callback = function(v) Aimlock.ShowFOV = v end })
-CombatTab:Slider({ Title = "FOV Radius", Value = { Min = 10, Max = 800, Default = 100 }, Callback = function(v) Aimlock.FOV = v end })
+local function RefreshPlayers()
+    local names = {}
+    for _, v in pairs(Players:GetPlayers()) do if v ~= LocalPlayer then table.insert(names, v.Name) end end
+    PlayerDrop:Refresh(names)
+end
+InteractTab:Button({ Title = "Refresh List", Icon = "refresh-cw", Callback = RefreshPlayers })
+InteractTab:Button({
+    Title = "Teleport to Player", Icon = "arrow-right",
+    Callback = function()
+        if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        else WindUI:Notify({ Title = "Error", Content = "Invalid target or player dead.", Icon = "alert-circle" }) end
+    end
+})
+InteractTab:Toggle({
+    Title = "Spectate Player",
+    Callback = function(v)
+        if v and SelectedPlayer and SelectedPlayer.Character then
+            Camera.CameraSubject = SelectedPlayer.Character.Humanoid
+        else
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end
+})
+RefreshPlayers()
 
--- Cloud & Settings
+-- [ VISUALS ] --
+local VisualsTab = PlayerSection:Tab({ Title = "Visuals", Icon = "eye" })
+VisualsTab:Toggle({ Flag = "EspMaster", Title = "Enable ESP", Value = false, Callback = function(v) ESP.Enabled = v end })
+VisualsTab:Dropdown({
+    Flag = "EspElements", Title = "ESP Elements", Desc = "Select active visual elements",
+    Values = { { Title = "Boxes", Icon = "box-select" }, { Title = "Names", Icon = "text" }, { Title = "Health", Icon = "activity" }, { Title = "Tracers", Icon = "move" }, { Title = "Skeleton", Icon = "user" }, { Title = "Chams", Icon = "sun" } },
+    Multi = true, Value = {},
+    Callback = function(items)
+        ESP.Boxes = false; ESP.Names = false; ESP.Health = false; ESP.Tracers = false; ESP.Skeleton = false; ESP.Chams = false
+        for _, item in pairs(items) do
+            local val = (type(item) == "table" and item.Title) or item
+            if val == "Boxes" then ESP.Boxes = true end
+            if val == "Names" then ESP.Names = true end
+            if val == "Health" then ESP.Health = true end
+            if val == "Tracers" then ESP.Tracers = true end
+            if val == "Skeleton" then ESP.Skeleton = true end
+            if val == "Chams" then ESP.Chams = true end
+        end
+    end
+})
+VisualsTab:Section({ Title = "Settings" })
+VisualsTab:Toggle({ Flag = "EspTeamCheck", Title = "Team Check", Value = false, Callback = function(v) ESP.TeamCheck = v end })
+VisualsTab:Colorpicker({ Flag = "EspEnemyColor", Title = "Enemy Color", Default = Color3.fromRGB(255, 60, 60), Callback = function(v) ESP.EnemyColor = v end })
+VisualsTab:Colorpicker({ Flag = "EspTeamColor", Title = "Team Color", Default = Color3.fromRGB(60, 255, 60), Callback = function(v) ESP.TeamColor = v end })
+
+-- [ COMBAT ] --
+local CombatTab = PlayerSection:Tab({ Title = "Combat", Icon = "crosshair" })
+CombatTab:Toggle({ Flag = "AimEnabled", Title = "Enable Aimlock", Value = false, Callback = function(v) Aimlock.Enabled = v end })
+CombatTab:Keybind({ Flag = "AimKey", Title = "Aim Key", Value = "E", Callback = function(v) Aimlock.Key = Enum.KeyCode[v] end })
+CombatTab:Dropdown({ Flag = "AimPart", Title = "Target Part", Values = {"Head", "Torso", "HumanoidRootPart"}, Value = "Head", Callback = function(v) Aimlock.TargetPart = v end })
+CombatTab:Slider({ Flag = "AimSmooth", Title = "Smoothing", Value = { Min = 0, Max = 10, Default = 0 }, Step = 1, Callback = function(v) Aimlock.Smoothing = v end })
+CombatTab:Toggle({ Flag = "AimHud", Title = "Show Target HUD", Value = true, Callback = function(v) Aimlock.UseHUD = v end })
+CombatTab:Toggle({ Flag = "AimWall", Title = "Wall Check", Value = false, Callback = function(v) Aimlock.WallCheck = v end })
+CombatTab:Toggle({ Flag = "AimFovShow", Title = "Show FOV", Value = false, Callback = function(v) Aimlock.ShowFOV = v end })
+CombatTab:Slider({ Flag = "AimFov", Title = "FOV Radius", Value = { Min = 10, Max = 800, Default = 100 }, Callback = function(v) Aimlock.FOV = v end })
+CombatTab:Colorpicker({ Flag = "AimFovColor", Title = "FOV Color", Default = Color3.fromRGB(255, 255, 255), Callback = function(v) FOVCircle.Color = v end })
+
+-- Cloud
 local CloudTab = CloudSection:Tab({ Title = "ScriptBlox", Icon = "cloud-download" })
 local currentScripts = {} 
 local selectedScript = nil
+local ResultsDrop
 
 CloudTab:Input({
     Title = "Search ScriptBlox", Icon = "search",
@@ -592,38 +499,53 @@ CloudTab:Input({
         task.spawn(function()
             local results = fetchScriptBlox(query, "search")
             currentScripts = results
-            local names = {}
-            for _, s in ipairs(results) do table.insert(names, s.title) end
-            _G.ResultsDrop:Refresh(names)
+            local dropdownValues = {}
+            for _, s in ipairs(results) do
+                table.insert(dropdownValues, {
+                    Title = s.title,
+                    Desc = (s.game and s.game.name or "Unknown Game") .. " | " .. (s.views or 0) .. " views",
+                    Icon = "file-code",
+                    Callback = function()
+                        selectedScript = s
+                        local content = string.format("<b>Game:</b> %s\n<b>Views:</b> %s\n<b>Key:</b> %s", s.game and s.game.name or "?", s.views or 0, s.key and "Yes" or "No")
+                        WindUI:Popup({ 
+                            Title = s.title, Content = content, 
+                            Buttons = {
+                                { Title = "Cancel", Variant = "Secondary", Callback = function() end },
+                                { Title = "Execute", Variant = "Primary", Callback = function() if s.key then setclipboard(s.keyLink) end safeLoad(s.script, true) end }
+                            }
+                        })
+                    end
+                })
+            end
+            if ResultsDrop then ResultsDrop:Refresh(dropdownValues) end
             WindUI:Notify({ Title = "Success", Content = #results .. " scripts found.", Icon = "check" })
         end)
     end
 })
-_G.ResultsDrop = CloudTab:Dropdown({
-    Title = "Select Script", Values = {"Search first..."}, Value = "Search first...",
-    Callback = function(val)
-        for _, s in ipairs(currentScripts) do if s.title == val then selectedScript = s break end end
-        _G.DetailsBtn:Highlight()
-    end
-})
-CloudTab:Space()
-_G.DetailsBtn = CloudTab:Button({
-    Title = "View & Execute", Icon = "expand", Color = Color3.fromHex("#007bff"),
-    Callback = function()
-        if not selectedScript then return end
-        local s = selectedScript
-        local content = string.format("<b>Game:</b> %s\n<b>Views:</b> %s\n<b>Key:</b> %s", s.game and s.game.name or "?", s.views or 0, s.key and "Yes" or "No")
-        WindUI:Popup({ Title = s.title, Content = content, Buttons = {
-            { Title = "Cancel", Variant = "Secondary", Callback = function() end },
-            { Title = "Execute", Variant = "Primary", Callback = function() if s.key then setclipboard(s.keyLink) end safeLoad(s.script, true) end }
-        }})
-    end
-})
+ResultsDrop = CloudTab:Dropdown({ Title = "Results", Desc = "Select to view details", Values = {}, Value = "Search first..." })
 
+-- Config Manager
+local ConfigTab = ConfigSection:Tab({ Title = "Configs", Icon = "save" })
+local ConfigManager = Window.ConfigManager
+local ConfigName = "default"
+
+local ConfigNameInput = ConfigTab:Input({ Title = "Config Name", Icon = "file-cog", Callback = function(v) ConfigName = v end })
+ConfigTab:Space()
+local AutoLoadToggle = ConfigTab:Toggle({ Title = "Auto Load Selected", Value = false, Callback = function(v) Window.CurrentConfig:SetAutoLoad(v) end })
+ConfigTab:Space()
+local AllConfigsDropdown = ConfigTab:Dropdown({
+    Title = "Load Config", Values = ConfigManager:AllConfigs(), Value = nil,
+    Callback = function(v) ConfigName = v; ConfigNameInput:Set(v); AutoLoadToggle:Set(ConfigManager:GetConfig(ConfigName).AutoLoad or false) end
+})
+ConfigTab:Button({ Title = "Save Config", Icon = "save", Callback = function() Window.CurrentConfig = ConfigManager:Config(ConfigName); if Window.CurrentConfig:Save() then WindUI:Notify({ Title = "Saved", Content = "Config saved: " .. ConfigName, Icon = "check" }); AllConfigsDropdown:Refresh(ConfigManager:AllConfigs()) end end })
+ConfigTab:Button({ Title = "Load Config", Icon = "upload", Callback = function() Window.CurrentConfig = ConfigManager:CreateConfig(ConfigName); if Window.CurrentConfig:Load() then WindUI:Notify({ Title = "Loaded", Content = "Config loaded: " .. ConfigName, Icon = "refresh-cw" }) end end })
+
+-- Settings
 local SettingsTab = SettingsSection:Tab({ Title = "Interface", Icon = "settings" })
 local themeNames = {}
 for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
 SettingsTab:Dropdown({ Title = "Theme", Values = themeNames, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end })
 SettingsTab:Keybind({ Title = "Menu Toggle", Value = "H", Callback = function(key) Window:SetToggleKey(Enum.KeyCode[key]) end })
 
-WindUI:Notify({ Title = "ro-archive loaded", Content = "All systems operational.", Duration = 4 })
+WindUI:Notify({ Title = "ro-archive v4", Content = "Final Edition Loaded.", Duration = 4 })
