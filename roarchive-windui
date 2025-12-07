@@ -1,7 +1,6 @@
 --[[
-    ro-archive (v6 Community Edition)
-    English Only | WindUI | ScriptBlox
-    Features: 5-Star Rating, Feedback Types, Config System, Optimized ESP
+    ro-archive (v6 Community Edition) + WindUI Example Merge
+    Merged Features: Solar Icons, Dynamic Discord API, UI Demo Tab, Full ESP/Aimbot
 ]]
 
 local WindUI
@@ -15,6 +14,19 @@ do
         WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
     end
 end
+
+-- // [MERGE] 0. Icon Registration (From Example) // --
+WindUI.Creator.AddIcons("solar", {
+    ["CheckSquareBold"] = "rbxassetid://132438947521974",
+    ["CursorSquareBold"] = "rbxassetid://120306472146156",
+    ["FileTextBold"] = "rbxassetid://89294979831077",
+    ["FolderWithFilesBold"] = "rbxassetid://74631950400584",
+    ["HamburgerMenuBold"] = "rbxassetid://134384554225463",
+    ["Home2Bold"] = "rbxassetid://92190299966310",
+    ["InfoSquareBold"] = "rbxassetid://119096461016615",
+    ["PasswordMinimalisticInputBold"] = "rbxassetid://109919668957167",
+    ["SolarSquareTransferHorizontalBold"] = "rbxassetid://125444491429160",
+})
 
 -- // Global Connections Table (For Safe Unload) // --
 local Connections = {} 
@@ -51,7 +63,6 @@ end
 local function sendWebhook(msg, rating, ftype)
     local req = request or http_request or (syn and syn.request) or (fluxus and fluxus.request)
     if req then
-        -- Color logic based on rating
         local color = 16711680 -- Red (Low)
         if rating == "⭐⭐⭐⭐⭐" or rating == "⭐⭐⭐⭐" then color = 65280 end -- Green (High)
         if rating == "⭐⭐⭐" then color = 16776960 end -- Yellow (Mid)
@@ -63,7 +74,7 @@ local function sendWebhook(msg, rating, ftype)
             Body = HttpService:JSONEncode({
                 content = "",
                 embeds = {{
-                    title = "New " .. ftype, -- "New Bug Report" etc.
+                    title = "New " .. ftype,
                     description = "**Message:**\n" .. (msg ~= "" and msg or "No message provided."),
                     color = color,
                     fields = {
@@ -376,7 +387,7 @@ local AimLoop = RunService.RenderStepped:Connect(function()
 end)
 table.insert(Connections, AimLoop)
 
--- // 6. UI // --
+-- // 6. UI Creation // --
 local Window = WindUI:CreateWindow({
     Title = "ro-archive  |  v6 Community",
     Author = "sdwird",
@@ -389,24 +400,48 @@ local Window = WindUI:CreateWindow({
     KeySystem = { Title = "Security", Note = "Key: 1234", KeyValidator = function(k) return k == "1234" end }
 })
 
+-- [MERGE] Tag from Example
+Window:Tag({
+    Title = "v6.0.0",
+    Icon = "github",
+    Color = Color3.fromHex("#1c1c1c")
+})
+
 local MainSection = Window:Section({ Title = "Dashboard" })
 local PlayerSection = Window:Section({ Title = "Player & Combat" })
 local CloudSection = Window:Section({ Title = "Cloud" })
+local DemoSection = Window:Section({ Title = "WindUI Demo" }) -- [MERGE] New Section for Example Elements
 local ConfigSection = Window:Section({ Title = "Profiles" })
 local SettingsSection = Window:Section({ Title = "Settings" })
 
--- Dashboard
-local HomeTab = MainSection:Tab({ Title = "Home", Icon = "house" })
+-- [MERGE] Dashboard + Dynamic Discord Check from Example
+local HomeTab = MainSection:Tab({ Title = "Home", Icon = "solar:Home2Bold" })
+
+-- Fetch Discord Info Logic (from Example, adapted)
+local InviteCode = "ftgs-development-hub-1300692552005189632" -- Example Invite Code (Change to yours)
+local DiscordInfo = { Name = "Discord Server", Desc = "Join our community!", Icon = "rbxassetid://129260712070622" }
+
+task.spawn(function()
+    local ok, response = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://discord.com/api/v10/invites/" .. InviteCode .. "?with_counts=true&with_expiration=true"))
+    end)
+    if ok and response and response.guild then
+        DiscordInfo.Name = response.guild.name
+        DiscordInfo.Desc = response.guild.description or "Join our community!"
+        DiscordInfo.Icon = "https://cdn.discordapp.com/icons/" .. response.guild.id .. "/" .. response.guild.icon .. ".png?size=1024"
+    end
+end)
+
 HomeTab:Paragraph({
     Title = "Welcome, " .. LocalPlayer.Name,
     Desc = "ro-archive v6 Community Edition.\nBuild Status: Release\nGame ID: " .. game.GameId,
-    Image = "rbxassetid://129260712070622", 
+    Image = DiscordInfo.Icon, 
     ImageSize = 64,
     Buttons = {
         {
             Title = "Copy Discord",
             Icon = "link",
-            Callback = function() setclipboard("https://discord.gg/yourserver") end
+            Callback = function() setclipboard("https://discord.gg/" .. InviteCode) end
         },
         {
             Title = "Unload Script",
@@ -533,7 +568,7 @@ local VisualsTab = PlayerSection:Tab({ Title = "Visuals", Icon = "eye" })
 VisualsTab:Toggle({ Flag = "EspMaster", Title = "Enable ESP", Value = false, Callback = function(v) ESP.Enabled = v end })
 VisualsTab:Dropdown({
     Flag = "EspElements", Title = "ESP Elements", Desc = "Select active visual elements",
-    Values = { { Title = "Boxes", Icon = "box-select" }, { Title = "Names", Icon = "text" }, { Title = "Health", Icon = "activity" }, { Title = "Tracers", Icon = "move" }, { Title = "Skeleton", Icon = "user" }, { Title = "Chams", Icon = "sun" } },
+    Values = { { Title = "Boxes", Icon = "solar:CheckSquareBold" }, { Title = "Names", Icon = "text" }, { Title = "Health", Icon = "activity" }, { Title = "Tracers", Icon = "move" }, { Title = "Skeleton", Icon = "user" }, { Title = "Chams", Icon = "sun" } },
     Multi = true, Value = {},
     Callback = function(items)
         ESP.Boxes = false; ESP.Names = false; ESP.Health = false; ESP.Tracers = false; ESP.Skeleton = false; ESP.Chams = false
@@ -605,6 +640,35 @@ CloudTab:Input({
 })
 ResultsDrop = CloudTab:Dropdown({ Title = "Results", Desc = "Select to view details", Values = {}, Value = "Search first..." })
 
+-- // [MERGE] WINDUI DEMO TAB (From Example Script) // --
+local DemoTab = DemoSection:Tab({ Title = "Demo Elements", Icon = "solar:FolderWithFilesBold" })
+local DemoGroup = DemoTab:Group({})
+
+DemoGroup:Button({
+    Title = "Highlight Button",
+    Icon = "mouse",
+    Callback = function()
+        print("Clicked highlight")
+        -- Note: Highlight() method usage if supported
+    end
+})
+DemoGroup:Space()
+DemoGroup:Slider({
+    Title = "Demo Slider",
+    Desc = "From the example script",
+    IsTooltip = true, -- [MERGE] Example feature
+    Step = 1,
+    Value = { Min = 0, Max = 100, Default = 50 },
+    Callback = function(v) print(v) end
+})
+DemoGroup:Space()
+DemoGroup:Toggle({
+    Title = "Example Toggle",
+    Desc = "With Solar Icon",
+    Icon = "solar:CheckSquareBold", -- [MERGE] Using Solar Icon
+    Callback = function(v) print(v) end
+})
+
 -- Config Manager
 local ConfigTab = ConfigSection:Tab({ Title = "Configs", Icon = "save" })
 local ConfigManager = Window.ConfigManager
@@ -628,4 +692,4 @@ for name in pairs(WindUI:GetThemes()) do table.insert(themeNames, name) end
 SettingsTab:Dropdown({ Title = "Theme", Values = themeNames, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end })
 SettingsTab:Keybind({ Title = "Menu Toggle", Value = "H", Callback = function(key) Window:SetToggleKey(Enum.KeyCode[key]) end })
 
-WindUI:Notify({ Title = "ro-archive v6", Content = "Community Edition Loaded.", Duration = 4 })
+WindUI:Notify({ Title = "ro-archive v6", Content = "Merged Community Edition Loaded.", Duration = 4 })
